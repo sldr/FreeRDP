@@ -433,7 +433,11 @@ buildconfig_data.set('PRODUCT', product)
 ############################################################
 # Staged subdirectories (added per implementation phase)
 ############################################################
-# Phase 2: subdir('winpr')
+# Phase 2: WinPR (config headers generated now; library modules pending)
+if get_option('unified_build')
+  subdir('winpr')
+endif
+
 # Phase 3: subdir('libfreerdp')
 # Phase 4: subdir('channels')
 # Phase 5: subdir('client') / subdir('server') / subdir('rdtk')
