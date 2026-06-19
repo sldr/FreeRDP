@@ -387,6 +387,8 @@ tmpl_config_h = files('include' / 'config' / 'config.h.in')
 tmpl_buildflags_h = files('include' / 'config' / 'buildflags.h.in')
 tmpl_settings_keys_h = files('include' / 'config' / 'settings_keys.h.in')
 settings_types_private_h = files('include' / 'freerdp' / 'settings_types_private.h')
+gen_channel_tables_py = files('meson' / 'gen_channel_tables.py')
+tmpl_channel_tables = files('channels' / 'client' / 'tables.c.in')
 
 ############################################################
 # config.h data (CMake: include/config/config.h.in via #cmakedefine).
@@ -484,7 +486,13 @@ endif
 # Phase 3: libfreerdp (depends on winpr_dep)
 subdir('libfreerdp')
 
-# Phase 4: subdir('channels')
+# Phase 4: channels (build virtual channel plugins + static dispatch tables)
+freerdp_channels_client_dep = dependency('', required : false)
+freerdp_channels_server_dep = dependency('', required : false)
+if get_option('with_channels')
+  subdir('channels')
+endif
+
 # Phase 5: subdir('client') / subdir('server') / subdir('rdtk')
 
 # Phase 1: config headers. Generated last in CMake (after all WITH_*/CHANNEL_*
