@@ -497,7 +497,12 @@ endif
 if get_option('with_client_common') or get_option('with_client')
   subdir('client')
 endif
-# Phase 5b: servers (rdtk + shadow/proxy/Windows are further 5b work)
+# Phase 5b: rdtk toolkit (CMake: unified build, WITH_SERVER && WITH_RDTK) — used by shadow
+if get_option('with_server') and get_option('with_rdtk')
+  subdir('rdtk')
+endif
+
+# Phase 5b: servers (shadow/proxy/Windows are further 5b work)
 if get_option('with_server')
   subdir('server')
 endif
