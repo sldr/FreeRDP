@@ -38,6 +38,7 @@ channel_registry = [
   },
   {
     'name' : 'audin', 'type' : 'dynamic',
+    'client' : {'srcs' : ['audin/client/audin_main.c'], 'entries' : ['DVCPluginEntry'], 'audio' : true},
     'server' : {'srcs' : ['audin/server/audin.c'], 'entry' : 'DVCPluginEntry'},
   },
   {
@@ -136,6 +137,10 @@ channel_registry = [
   },
   {
     'name' : 'rdpsnd', 'type' : 'static',
+    'client' : {
+      'srcs' : ['rdpsnd/client/rdpsnd_main.c'],
+      'entries' : ['VirtualChannelEntryEx', 'DVCPluginEntry'], 'audio' : true,
+    },
     'server' : {'srcs' : ['rdpsnd/server/rdpsnd_main.c'], 'entry' : 'VirtualChannelEntry'},
   },
   {
@@ -165,27 +170,92 @@ channel_registry = [
   },
 ]
 
+channel_common_deps = [freerdp_dep, winpr_dep]
+
+############################################################
+# Audio backends for subsystem channels audin/rdpsnd
+# (CMake: WITH_ALSA/PULSE/OSS/SNDIO/WINMM/MACAUDIO -> add_channel_client_subsystem).
+# Each backend builds <channel>/client/<be>/<channel>_<be>.<ext>.
+############################################################
+audio_backends = []
+alsa_feat = get_option('with_alsa')
+if (alsa_feat.enabled() or alsa_feat.auto()) and is_unix and not is_darwin
+  alsa_dep = dependency('alsa', required : alsa_feat.enabled())
+  if alsa_dep.found()
+    audio_backends += {'name' : 'alsa', 'ext' : 'c', 'deps' : [alsa_dep]}
+  endif
+endif
+pulse_feat = get_option('with_pulse')
+if (pulse_feat.enabled() or pulse_feat.auto()) and is_unix and not is_darwin
+  pulse_dep = dependency('libpulse', required : pulse_feat.enabled())
+  if pulse_dep.found()
+    audio_backends += {'name' : 'pulse', 'ext' : 'c',
+                       'deps' : [pulse_dep, dependency('libpulse-simple', required : false)]}
+  endif
+endif
+oss_feat = get_option('with_oss')
+if (oss_feat.enabled() or oss_feat.auto()) and is_unix and not is_darwin \
+   and cc.has_header('sys/soundcard.h')
+  audio_backends += {'name' : 'oss', 'ext' : 'c', 'deps' : []}
+endif
+sndio_feat = get_option('with_sndio')
+if (sndio_feat.enabled() or sndio_feat.auto()) and is_openbsd
+  sndio_dep = cc.find_library('sndio', required : sndio_feat.enabled())
+  if sndio_dep.found()
+    audio_backends += {'name' : 'sndio', 'ext' : 'c', 'deps' : [sndio_dep]}
+  endif
+endif
+if get_option('with_winmm') and is_windows
+  audio_backends += {'name' : 'winmm', 'ext' : 'c', 'deps' : [cc.find_library('winmm')]}
+endif
+if get_option('with_macaudio') and is_darwin
+  audio_backends += {'name' : 'mac', 'ext' : 'm',
+                     'deps' : [dependency('appleframeworks', modules : ['AudioToolbox', 'CoreAudio'])]}
+endif
+
 channels_client_objlibs = []
 channels_server_objlibs = []
 client_modules_meta = []      # JSON fragments for the dispatch-table generator
-channel_common_deps = [freerdp_dep, winpr_dep]
 
 foreach ch : channel_registry
   cname = ch['name']
   channel_inc = include_directories(cname)
+  client_inc = [freerdp_public_inc, winpr_inc, channel_inc]
 
   if with_client_channels and ch.has_key('client')
     cl = ch['client']
+    entries = cl.has_key('entries') ? cl['entries'] : [cl['entry']]
     libname = '@0@-client'.format(cname)
     channels_client_objlibs += static_library(
       libname,
       files(cl['srcs']),
-      include_directories : [freerdp_public_inc, winpr_inc, channel_inc],
+      include_directories : client_inc,
       dependencies : channel_common_deps,
       gnu_symbol_visibility : default_symbol_visibility,
     )
-    client_modules_meta += '{"channel":"@0@","name":"@1@","entries":["@2@"],"subsystems":[]}'.format(
-      cname, libname, cl['entry'])
+
+    # Audio subsystem backends (audin/rdpsnd)
+    subsystem_names = []
+    if cl.has_key('audio') and cl['audio']
+      foreach be : audio_backends
+        sub = be['name']
+        sub_src = '@0@/client/@1@/@0@_@1@.@2@'.format(cname, sub, be['ext'])
+        channels_client_objlibs += static_library(
+          '@0@-client-@1@'.format(cname, sub),
+          files(sub_src),
+          include_directories : client_inc + [include_directories(cname / 'client')],
+          dependencies : channel_common_deps + be['deps'],
+          gnu_symbol_visibility : default_symbol_visibility,
+        )
+        subsystem_names += sub
+      endforeach
+    endif
+
+    entries_json = '["' + '","'.join(entries) + '"]'
+    subs_json = subsystem_names.length() > 0 \
+      ? '["' + '","'.join(subsystem_names) + '"]' : '[]'
+    client_modules_meta += '{"channel":"@0@","name":"@1@","entries":@2@,"subsystems":@3@}'.format(
+      cname, libname, entries_json, subs_json)
   endif
 
   if with_server_channels and ch.has_key('server')
