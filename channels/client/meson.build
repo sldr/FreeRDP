@@ -20,7 +20,7 @@ freerdp_channels_client = static_library(
   channels_tables_c,
   files('addin.c', 'generic_dynvc.c'),
   include_directories : [freerdp_public_inc, winpr_inc, include_directories('.')],
-  dependencies : [freerdp_dep, winpr_dep],
+  dependencies : [freerdp_dep, winpr_dep] + channels_client_link_deps,
   link_whole : channels_client_objlibs,
   gnu_symbol_visibility : default_symbol_visibility,
 )

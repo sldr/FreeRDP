@@ -393,6 +393,7 @@ tmpl_settings_keys_h = files('include' / 'config' / 'settings_keys.h.in')
 settings_types_private_h = files('include' / 'freerdp' / 'settings_types_private.h')
 gen_channel_tables_py = files('meson' / 'gen_channel_tables.py')
 tmpl_channel_tables = files('channels' / 'client' / 'tables.c.in')
+tmpl_oss_includes = files('cmake' / 'oss-includes.h.in')
 
 ############################################################
 # config.h data (CMake: include/config/config.h.in via #cmakedefine).

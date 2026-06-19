@@ -197,9 +197,25 @@ if (pulse_feat.enabled() or pulse_feat.auto()) and is_unix and not is_darwin
   endif
 endif
 oss_feat = get_option('with_oss')
-if (oss_feat.enabled() or oss_feat.auto()) and is_unix and not is_darwin \
-   and cc.has_header('sys/soundcard.h')
-  audio_backends += {'name' : 'oss', 'ext' : 'c', 'deps' : []}
+if (oss_feat.enabled() or oss_feat.auto()) and is_unix and not is_darwin
+  # Platform-specific OSS header (CMake: FindOSS.cmake).
+  if is_freebsd
+    oss_hdr = 'sys/soundcard.h'
+  elif is_openbsd
+    oss_hdr = 'machine/soundcard.h'
+  else
+    oss_hdr = 'linux/soundcard.h'
+  endif
+  if cc.has_header(oss_hdr)
+    # Generate oss-includes.h (CMake: cmake/oss-includes.h.in) into build/channels/
+    # so the OSS backend's #include <oss-includes.h> resolves.
+    oss_cfg = configuration_data()
+    oss_cfg.set('OSS_HDR_NAME', oss_hdr)
+    configure_file(input : tmpl_oss_includes, output : 'oss-includes.h',
+                   configuration : oss_cfg)
+    audio_backends += {'name' : 'oss', 'ext' : 'c', 'deps' : [],
+                       'extra_inc' : [include_directories('.')]}
+  endif
 endif
 sndio_feat = get_option('with_sndio')
 if (sndio_feat.enabled() or sndio_feat.auto()) and is_openbsd
@@ -219,6 +235,11 @@ endif
 channels_client_objlibs = []
 channels_server_objlibs = []
 client_modules_meta = []      # JSON fragments for the dispatch-table generator
+# External link deps from subsystem backends (alsa/pulse/...). They must be
+# attached to the channels-client framework directly: Meson does not reliably
+# propagate external deps through a two-level link_whole chain
+# (subsystem.a -> channels-client.a -> libfreerdp-client.so).
+channels_client_link_deps = []
 
 foreach ch : channel_registry
   cname = ch['name']
@@ -253,10 +274,11 @@ foreach ch : channel_registry
         channels_client_objlibs += static_library(
           '@0@-client-@1@'.format(cname, sub),
           files(sub_src),
-          include_directories : client_inc + [include_directories(cname / 'client')],
+          include_directories : client_inc + [include_directories(cname / 'client')] + be.get('extra_inc', []),
           dependencies : channel_common_deps + be['deps'],
           gnu_symbol_visibility : default_symbol_visibility,
         )
+        channels_client_link_deps += be['deps']
         subsystem_names += sub
       endforeach
     endif

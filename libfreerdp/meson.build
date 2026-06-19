@@ -42,6 +42,11 @@ endif
 avutil_dep = dependency('libavutil', required : false)
 avcodec_dep = dependency('libavcodec', required : false)
 swresample_dep = dependency('libswresample', required : false)
+# CMake's FindFFmpeg sets SWRESAMPLE_FOUND/AVRESAMPLE_FOUND in config.h; dsp_ffmpeg.c
+# #errors without one. Modern FFmpeg uses libswresample (avresample is removed).
+if swresample_dep.found()
+  config_h.set('SWRESAMPLE_FOUND', true)
+endif
 ffmpeg_found = avutil_dep.found() and avcodec_dep.found()
 with_dsp_ffmpeg = get_option('with_dsp_ffmpeg') and ffmpeg_found
 with_video_ffmpeg = get_option('with_video_ffmpeg') and ffmpeg_found
