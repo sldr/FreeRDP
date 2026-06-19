@@ -4,22 +4,14 @@
 # collected in channels/meson.build, then assembles freerdp-channels-client from
 # tables.c + addin.c + generic_dynvc.c and link_whole's in every client channel.
 
-# Serialise the collected static-channel metadata to JSON.
-channels_meta_cdata = configuration_data()
-channels_meta_cdata.set('CHANNELS_JSON',
-  '{"modules":[' + ','.join(client_modules_meta) + ']}')
-channels_meta_json = configure_file(
-  input : files('channels_meta.json.in'),
-  output : 'channels_meta.json',
-  configuration : channels_meta_cdata,
-)
-
 # Generate tables.c (replaces the CMake string-building + tables.c.in).
+# The collected static-channel metadata is passed straight to the generator as a
+# JSON string argument (no intermediate file).
+channels_meta_json = '{"modules":[' + ','.join(client_modules_meta) + ']}'
 channels_tables_c = custom_target(
   'channel-tables',
-  input : channels_meta_json,
   output : 'tables.c',
-  command : [python, gen_channel_tables_py, '@INPUT@', tmpl_channel_tables, '@OUTPUT@'],
+  command : [python, gen_channel_tables_py, channels_meta_json, tmpl_channel_tables, '@OUTPUT@'],
   depend_files : [tmpl_channel_tables],
 )
 
