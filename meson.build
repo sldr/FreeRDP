@@ -497,7 +497,10 @@ endif
 if get_option('with_client_common') or get_option('with_client')
   subdir('client')
 endif
-# Phase 5b: subdir('server') / subdir('rdtk')
+# Phase 5b: servers (rdtk + shadow/proxy/Windows are further 5b work)
+if get_option('with_server')
+  subdir('server')
+endif
 
 # Phase 1: config headers. Generated last in CMake (after all WITH_*/CHANNEL_*
 # are known); kept here for now and re-ordered when later phases land.
