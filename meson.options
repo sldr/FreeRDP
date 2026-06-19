@@ -80,6 +80,10 @@ option('with_wayland', type : 'feature', value : 'auto',
        description : 'Build Wayland client (CMake: WITH_WAYLAND)')
 option('with_client_mac', type : 'boolean', value : true,
        description : 'Build macOS native client (CMake: WITH_CLIENT_MAC)')
+option('with_fuse', type : 'feature', value : 'auto',
+       description : 'Build clipboard with FUSE file copy support; auto = on for Linux/BSD (CMake: WITH_FUSE)')
+option('with_sso_mib', type : 'boolean', value : false,
+       description : 'Build client with sso-mib support (CMake: WITH_SSO_MIB)')
 
 ############################################################
 # Crypto / security
