@@ -26,6 +26,9 @@ project(
 )
 
 cc = meson.get_compiler('c')
+# Objective-C is needed for the Apple-specific sources (WinPR crt unicode_apple.m,
+# macOS client). Enabled only where an ObjC compiler exists.
+add_languages('objc', native : false, required : host_machine.system() == 'darwin')
 fs = import('fs')
 host_system = host_machine.system()
 cpu_family = host_machine.cpu_family()
