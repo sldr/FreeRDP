@@ -78,6 +78,7 @@ channel_registry = [
   },
   {
     'name' : 'gfxredir', 'type' : 'dynamic',
+    'common' : ['gfxredir/common/gfxredir_common.c'],
     'server' : {'srcs' : ['gfxredir/server/gfxredir_main.c'], 'entry' : 'DVCPluginEntry'},
   },
   {
@@ -137,6 +138,7 @@ channel_registry = [
   },
   {
     'name' : 'rdpsnd', 'type' : 'static',
+    'common' : ['rdpsnd/common/rdpsnd_common.c'],
     'client' : {
       'srcs' : ['rdpsnd/client/rdpsnd_main.c'],
       'entries' : ['VirtualChannelEntryEx', 'DVCPluginEntry'], 'audio' : true,
@@ -145,6 +147,7 @@ channel_registry = [
   },
   {
     'name' : 'remdesk', 'type' : 'static',
+    'common' : ['remdesk/common/remdesk_common.c'],
     'client' : {'srcs' : ['remdesk/client/remdesk_main.c'], 'entry' : 'VirtualChannelEntryEx'},
     'server' : {'srcs' : ['remdesk/server/remdesk_main.c'], 'entry' : 'VirtualChannelEntry'},
   },
@@ -219,8 +222,15 @@ client_modules_meta = []      # JSON fragments for the dispatch-table generator
 
 foreach ch : channel_registry
   cname = ch['name']
+  cupper = cname.to_upper()
   channel_inc = include_directories(cname)
-  client_inc = [freerdp_public_inc, winpr_inc, channel_inc]
+  # Some channels keep shared code in a common/ subdir (CMake: add_subdirectory(common)
+  # + include_directories(common)). Compile those sources into each side and add
+  # the common/ dir to the include path.
+  common_files = ch.has_key('common') ? files(ch['common']) : []
+  common_inc = ch.has_key('common') ? [include_directories(cname / 'common')] : []
+  client_inc = [freerdp_public_inc, winpr_inc, channel_inc] + common_inc
+  channel_built = false
 
   if with_client_channels and ch.has_key('client')
     cl = ch['client']
@@ -228,7 +238,7 @@ foreach ch : channel_registry
     libname = '@0@-client'.format(cname)
     channels_client_objlibs += static_library(
       libname,
-      files(cl['srcs']),
+      files(cl['srcs']) + common_files,
       include_directories : client_inc,
       dependencies : channel_common_deps,
       gnu_symbol_visibility : default_symbol_visibility,
@@ -256,17 +266,33 @@ foreach ch : channel_registry
       ? '["' + '","'.join(subsystem_names) + '"]' : '[]'
     client_modules_meta += '{"channel":"@0@","name":"@1@","entries":@2@,"subsystems":@3@}'.format(
       cname, libname, entries_json, subs_json)
+
+    config_h.set('CHANNEL_@0@_CLIENT'.format(cupper), true)
+    channel_built = true
   endif
 
   if with_server_channels and ch.has_key('server')
     sv = ch['server']
     channels_server_objlibs += static_library(
       '@0@-server'.format(cname),
-      files(sv['srcs']),
-      include_directories : [freerdp_public_inc, winpr_inc, channel_inc],
+      files(sv['srcs']) + common_files,
+      include_directories : [freerdp_public_inc, winpr_inc, channel_inc] + common_inc,
       dependencies : channel_common_deps,
       gnu_symbol_visibility : default_symbol_visibility,
     )
+    config_h.set('CHANNEL_@0@_SERVER'.format(cupper), true)
+    channel_built = true
+  endif
+
+  # Base channel define (CMake: #cmakedefine CHANNEL_<NAME>) + a couple of
+  # plugin-level aliases used by config.h.in.
+  if channel_built
+    config_h.set('CHANNEL_@0@'.format(cupper), true)
+    if cname == 'rdpdr'
+      config_h.set('WITH_RDPDR', true)
+    elif cname == 'gfxredir'
+      config_h.set('WITH_CHANNEL_GFXREDIR', true)
+    endif
   endif
 endforeach
 

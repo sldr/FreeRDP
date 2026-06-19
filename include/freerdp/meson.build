@@ -56,14 +56,14 @@ configure_file(
 )
 
 # settings_keys.h  (CMake: parsed from settings_types_private.h)
-settings_keys_h = custom_target(
-  'settings_keys.h',
-  output : 'settings_keys.h',
-  command : [
-    python, gen_settings_py,
-    settings_types_private_h, tmpl_settings_keys_h, '@OUTPUT@',
-  ],
-  depend_files : [settings_types_private_h, tmpl_settings_keys_h],
-  install : true,
-  install_dir : gen_install_dir,
+# Generated at CONFIGURE time via run_command so the header is on disk before any
+# compile, exactly like the configure_file() headers above. (A build-time
+# custom_target would require an explicit dependency edge on every consumer of
+# <freerdp/settings_keys.h>, which is most of libfreerdp + channels + clients.)
+settings_keys_h_path = meson.current_build_dir() / 'settings_keys.h'
+run_command(
+  python, gen_settings_py,
+  settings_types_private_h, tmpl_settings_keys_h, settings_keys_h_path,
+  check : true,
 )
+install_data(settings_keys_h_path, install_dir : gen_install_dir)

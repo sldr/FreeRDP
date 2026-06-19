@@ -18,7 +18,11 @@ project(
   license : 'Apache-2.0',
   meson_version : '>=1.3.0',
   default_options : [
-    'c_std=c11',
+    # gnu11, not c11: CMake sets CMAKE_C_EXTENSIONS ON (ProjectCStandard.cmake),
+    # and WinPR/FreeRDP rely on POSIX/GNU extensions (fseeko, strndup, ...) that
+    # strict -std=c11 hides behind __STRICT_ANSI__.
+    'c_std=gnu11,c11',
+    'cpp_std=gnu++17,c++17',
     'b_pie=true',
     'warning_level=2',
     'default_library=shared',
