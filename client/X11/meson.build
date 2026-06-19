@@ -10,6 +10,15 @@ xf_srcs = files(
 )
 
 xf_deps = [freerdp_client_dep, freerdp_dep, winpr_dep, x11_dep]
+if m_dep.found()
+  xf_deps += m_dep
+endif
+if not is_darwin
+  rt_dep = cc.find_library('rt', required : false)
+  if rt_dep.found()
+    xf_deps += rt_dep
+  endif
+endif
 xf_c_args = []
 xf_incs = [
   freerdp_public_inc, winpr_inc,
