@@ -261,6 +261,14 @@ option('with_internal_md4', type : 'boolean', value : false,
        description : 'Use compiled-in MD4 instead of OpenSSL/mbedTLS (CMake: WITH_INTERNAL_MD4)')
 option('with_internal_md5', type : 'boolean', value : false,
        description : 'Use compiled-in MD5 instead of OpenSSL/mbedTLS (CMake: WITH_INTERNAL_MD5)')
+option('with_unicode_builtin', type : 'boolean', value : false,
+       description : 'Use built-in Unicode conversion instead of system libraries (CMake: WITH_UNICODE_BUILTIN)')
+option('with_krb5', type : 'feature', value : 'auto',
+       description : 'Compile support for Kerberos authentication; auto = on for non-Windows/Apple/Android (CMake: WITH_KRB5)')
+option('with_timezone_icu', type : 'boolean', value : false,
+       description : 'Use ICU for improved timezone mapping (CMake: WITH_TIMEZONE_ICU)')
+option('with_systemd', type : 'feature', value : 'auto',
+       description : 'Export wLog to the systemd journal (CMake: WITH_SYSTEMD)')
 
 ############################################################
 # SIMD (cmake/DetectIntrinsicSupport.cmake)

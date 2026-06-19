@@ -95,14 +95,20 @@ if cc.has_function('getpwuid_r', prefix : '#include <pwd.h>')
 endif
 
 # execinfo backtrace family (all three required, mirror CMake)
+winpr_have_execinfo = false
 if cc.has_header('execinfo.h')
   bt = cc.has_function('backtrace', prefix : '#include <execinfo.h>')
   bts = cc.has_function('backtrace_symbols', prefix : '#include <execinfo.h>')
   btsfd = cc.has_function('backtrace_symbols_fd', prefix : '#include <execinfo.h>')
   if bt and bts and btsfd
+    winpr_have_execinfo = true
     winpr_config.set('WINPR_HAVE_EXECINFO_H', true)
   endif
 endif
+
+# Booleans reused by the utils module for conditional sources
+winpr_have_syslog = cc.has_header('syslog.h')
+winpr_have_unwind = cc.has_header('unwind.h')
 
 # eventfd_read/write
 if cc.has_header('sys/eventfd.h')
@@ -149,15 +155,27 @@ if with_internal_md5
   winpr_config.set('WITH_INTERNAL_MD5', true)
 endif
 
-# JSON support (cJSON or jansson) -> WITH_WINPR_JSON; gates WITH_AAD
+# JSON support (cJSON or json-c) -> WITH_WINPR_JSON; gates WITH_AAD.
+# Mirrors cmake/JsonDetect.cmake (cJSON preferred, json-c fallback).
 winpr_json_feature = get_option('with_winpr_json')
-winpr_json_dep = dependency('libcjson', required : false)
-if not winpr_json_dep.found()
-  winpr_json_dep = dependency('jansson', required : false)
+winpr_json_dep = dependency('', required : false)
+winpr_json_define = ''
+if winpr_json_feature.allowed()
+  cjson_dep = dependency('libcjson', required : false)
+  if cjson_dep.found()
+    winpr_json_dep = cjson_dep
+    winpr_json_define = 'WITH_CJSON'
+  else
+    jsonc_dep = dependency('json-c', required : false)
+    if jsonc_dep.found()
+      winpr_json_dep = jsonc_dep
+      winpr_json_define = 'WITH_JSONC'
+    endif
+  endif
 endif
-with_winpr_json = winpr_json_dep.found() and winpr_json_feature.allowed()
-if winpr_json_feature.enabled() and not winpr_json_dep.found()
-  error('with_winpr_json=enabled but neither cJSON nor jansson was found')
+with_winpr_json = winpr_json_dep.found()
+if winpr_json_feature.enabled() and not with_winpr_json
+  error('with_winpr_json=enabled but neither cJSON nor json-c was found')
 endif
 if with_winpr_json
   winpr_config.set('WITH_WINPR_JSON', true)
@@ -182,8 +200,15 @@ winpr_tmpl_config = files('include' / 'config' / 'config.h.in')
 winpr_inc = include_directories('include')
 
 ############################################################
-# Sub-builds
+# Library versioning (CMake: AddTargetWithResourceFile / WITH_LIBRARY_VERSIONING)
 ############################################################
-# Phase 2 (continued): subdir('libwinpr')   # winpr library
-# Phase 2 (continued): subdir('tools')      # winpr-tools (if enabled)
-subdir('include')   # generates winpr/{version,build-config,buildflags,config}.h
+with_library_versioning = get_option('with_library_versioning')
+
+############################################################
+# Sub-builds
+# NOTE: libwinpr is processed before include/ (matching winpr/CMakeLists.txt)
+# because the utils module's runtime detection (journald, PNG) feeds winpr/config.h.
+############################################################
+subdir('libwinpr')   # winpr library (populates winpr_config)
+subdir('include')    # generates winpr/{version,build-config,buildflags,config}.h
+# Phase 2 (continued): subdir('tools')   # winpr-tools (if enabled) — deferred
