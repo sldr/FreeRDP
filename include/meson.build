@@ -5,10 +5,8 @@
 # variable is known. The Meson port accumulates those into `config_h` across
 # the sub-builds and generates the headers here.
 
-# include_directories('.') exposes both the source include/ tree (for the
-# checked-in public headers, e.g. <freerdp/types.h>) and the corresponding
-# build/include/ tree (for the generated headers, e.g. <freerdp/config.h>).
-freerdp_public_inc = include_directories('.')
+# freerdp_public_inc is defined in the root meson.build (it must be available to
+# libfreerdp, which is processed before this directory).
 
 # Generate the config headers into build/include/freerdp/ so that
 # <freerdp/config.h> resolves through freerdp_public_inc.

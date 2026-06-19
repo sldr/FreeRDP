@@ -275,8 +275,8 @@ option('with_systemd', type : 'feature', value : 'auto',
 ############################################################
 option('with_simd', type : 'boolean', value : true,
        description : 'Enable SIMD optimized primitives (CMake: WITH_SIMD)')
-option('with_avx2', type : 'boolean', value : false,
-       description : 'Enable AVX2 optimized primitives (CMake: WITH_AVX2)')
+option('with_avx2', type : 'boolean', value : true,
+       description : 'Enable AVX2 optimized primitives (CMake: WITH_AVX2, default ON when WITH_SIMD)')
 
 ############################################################
 # Debug message switches (CMake: WITH_DEBUG_*)
