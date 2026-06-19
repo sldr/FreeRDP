@@ -5,9 +5,10 @@
 # This replaces the CMake string-building in channels/client/CMakeLists.txt
 # (the @CLIENT_STATIC_*@ substitutions in channels/client/tables.c.in).
 #
-# Usage: gen_channel_tables.py <metadata.json> <tables.c.in> <output tables.c>
+# Usage: gen_channel_tables.py <metadata> <tables.c.in> <output tables.c>
 #
-# metadata.json schema:
+# <metadata> is either a path to a JSON file or a literal JSON string with the
+# schema:
 #   {
 #     "modules": [
 #       {"channel": "echo", "name": "echo-client",
@@ -16,6 +17,7 @@
 #     ]
 #   }
 import json
+import os
 import sys
 
 
@@ -37,9 +39,13 @@ def entry_kind(entry):
 
 
 def main():
-    meta_path, template_path, output_path = sys.argv[1], sys.argv[2], sys.argv[3]
-    with open(meta_path, 'r', encoding='utf-8') as handle:
-        modules = json.load(handle).get('modules', [])
+    meta_arg, template_path, output_path = sys.argv[1], sys.argv[2], sys.argv[3]
+    if os.path.isfile(meta_arg):
+        with open(meta_arg, 'r', encoding='utf-8') as handle:
+            data = json.load(handle)
+    else:
+        data = json.loads(meta_arg)
+    modules = data.get('modules', [])
 
     # Unique ordered list of entry-point kinds (CHANNEL_STATIC_CLIENT_ENTRIES)
     entries = []
