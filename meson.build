@@ -169,6 +169,18 @@ if get_option('with_verbose_winpr_assert')
 endif
 
 ############################################################
+# X11 / Wayland availability (CMake: top-level WITH_X11 option gated by
+# platform + Wayland feature). Actual dependency lookup happens where used.
+############################################################
+x11_feat = get_option('with_x11')
+x11_default = not (is_windows or is_android or is_darwin)
+with_x11 = x11_feat.enabled() or (x11_feat.auto() and x11_default)
+
+wayland_feat = get_option('with_wayland')
+wayland_default = is_unix and not is_darwin and not is_android
+with_wayland = wayland_feat.enabled() or (wayland_feat.auto() and wayland_default)
+
+############################################################
 # Core dependencies
 ############################################################
 # Threads (CMake: find_package(Threads REQUIRED))
@@ -316,6 +328,30 @@ if common_c_args.length() > 0
   add_project_arguments(common_c_args, language : 'c')
 endif
 
+# SIMD per-file compiler flags (CMake: cmake/DetectIntrinsicSupport.cmake
+# set_simd_source_file_properties). Maps an intrinsic level to the c_args used
+# to compile that group of sources. Empty list => sources compile with no extra
+# flag (they are #if-guarded to be empty on the wrong architecture).
+simd_flags = {}
+if cc.get_id() == 'msvc'
+  if cpu_family == 'x86'
+    simd_flags = {'avx2' : ['/arch:AVX2']}
+  elif cpu_family == 'x86_64'
+    simd_flags = {'sse4.2' : ['/arch:SSE4.2'], 'avx2' : ['/arch:AVX2']}
+  endif
+elif cc.get_id() in ['gcc', 'clang']
+  if cpu_family in ['x86', 'x86_64']
+    simd_flags = {
+      'sse2' : ['-msse2'], 'sse3' : ['-msse3'], 'ssse3' : ['-mssse3'],
+      'sse4.1' : ['-msse4.1'], 'sse4.2' : ['-msse4.2'], 'avx2' : ['-mavx2'],
+    }
+  elif cpu_family == 'arm'
+    simd_flags = {'neon' : ['-mfpu=neon']}
+  elif cpu_family == 'aarch64'
+    simd_flags = {'neon' : []}  # NEON is baseline on AArch64, no flag needed
+  endif
+endif
+
 # Symbol visibility (CMake: ExportAllSymbols.cmake)
 export_all_symbols = get_option('export_all_symbols')
 if export_all_symbols
@@ -340,6 +376,10 @@ freerdp_build_config_list = []
 # Template / generator file handles (created here where the relative paths
 # are valid; consumed by include/freerdp/meson.build).
 ############################################################
+# FreeRDP public include dir (source include/ + generated build/include/).
+# Defined here so libfreerdp and later phases can use it before include/ runs.
+freerdp_public_inc = include_directories('include')
+
 gen_settings_py = files('meson' / 'gen_settings_keys.py')
 tmpl_version_h = files('include' / 'config' / 'version.h.in')
 tmpl_buildconfig_h = files('include' / 'config' / 'build-config.h.in')
@@ -441,7 +481,9 @@ if get_option('unified_build')
   subdir('winpr')
 endif
 
-# Phase 3: subdir('libfreerdp')
+# Phase 3: libfreerdp (depends on winpr_dep)
+subdir('libfreerdp')
+
 # Phase 4: subdir('channels')
 # Phase 5: subdir('client') / subdir('server') / subdir('rdtk')
 
