@@ -1,0 +1,73 @@
+# Meson build CI for FreeRDP.
+#
+# Compile-checks the (additive) Meson build system alongside CMake. Two presets:
+#   * core: minimal dependencies (WinPR + libfreerdp + channels + Sample bins)
+#   * full: desktop tier-1 features (X11 client, FFmpeg, ALSA, PulseAudio, FUSE)
+# built with both gcc and clang.
+name: Meson
+
+on:
+  push:
+    branches: [meson, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: ${{ matrix.preset }} / ${{ matrix.cc }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { preset: core, cc: gcc }
+          - { preset: full, cc: gcc }
+          - { preset: full, cc: clang }
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -q -y
+          sudo apt-get install -q -y ninja-build pkg-config python3-pip clang
+          # Meson >= 1.3 required (meson.build); use a recent release via pipx.
+          pipx install 'meson>=1.3'
+
+      - name: Install core dependencies
+        run: sudo apt-get install -q -y libssl-dev zlib1g-dev libicu-dev
+
+      - name: Install full-feature dependencies
+        if: matrix.preset == 'full'
+        run: |
+          sudo apt-get install -q -y \
+            libx11-dev libxext-dev libxinerama-dev libxcursor-dev libxv-dev \
+            libxi-dev libxrender-dev libxrandr-dev libxfixes-dev \
+            libavcodec-dev libavutil-dev libswscale-dev libswresample-dev \
+            libpulse-dev libasound2-dev libkrb5-dev libcjson-dev libfuse3-dev \
+            liburiparser-dev libsystemd-dev
+
+      - name: Configure (core)
+        if: matrix.preset == 'core'
+        run: |
+          meson setup build \
+            -Dwith_x11=disabled -Dwith_wayland=disabled -Dwith_client_sdl=disabled \
+            -Dwith_ffmpeg=disabled -Dwith_swscale=false -Dwith_fuse=disabled \
+            -Dwith_krb5=disabled -Dwith_winpr_json=disabled \
+            -Dwith_alsa=disabled -Dwith_pulse=disabled -Dwith_oss=disabled \
+            -Dwith_manpages=false
+
+      - name: Configure (full)
+        if: matrix.preset == 'full'
+        run: meson setup build -Dwith_x11=enabled
+
+      - name: Compile
+        run: meson compile -C build
+
+      - name: Show configuration log on failure
+        if: failure()
+        run: cat build/meson-logs/meson-log.txt
