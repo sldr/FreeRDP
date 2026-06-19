@@ -493,7 +493,11 @@ if get_option('with_channels')
   subdir('channels')
 endif
 
-# Phase 5: subdir('client') / subdir('server') / subdir('rdtk')
+# Phase 5: clients (frontends are Phase 5b)
+if get_option('with_client_common') or get_option('with_client')
+  subdir('client')
+endif
+# Phase 5b: subdir('server') / subdir('rdtk')
 
 # Phase 1: config headers. Generated last in CMake (after all WITH_*/CHANNEL_*
 # are known); kept here for now and re-ordered when later phases land.
