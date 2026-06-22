@@ -54,6 +54,12 @@ option('with_server_interface', type : 'boolean', value : true,
        description : 'Build servers as a library with an interface (CMake: WITH_SERVER_INTERFACE)')
 option('with_shadow', type : 'boolean', value : true,
        description : 'Build shadow server (CMake: WITH_SHADOW)')
+option('with_shadow_subsystem', type : 'boolean', value : true,
+       description : 'Build the platform shadow capture subsystem (CMake: WITH_SHADOW_SUBSYSTEM)')
+option('with_server_shadow_cli', type : 'boolean', value : true,
+       description : 'Build the shadow server cli tool (CMake: WITH_SERVER_SHADOW_CLI)')
+option('with_pam', type : 'feature', value : 'auto',
+       description : 'Shadow X11 PAM authentication support (CMake: WITH_PAM)')
 option('with_proxy', type : 'boolean', value : true,
        description : 'Build proxy server (CMake: WITH_PROXY)')
 option('with_proxy_app', type : 'boolean', value : true,
