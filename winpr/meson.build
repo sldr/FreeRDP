@@ -211,4 +211,12 @@ with_library_versioning = get_option('with_library_versioning')
 ############################################################
 subdir('libwinpr')   # winpr library (populates winpr_config)
 subdir('include')    # generates winpr/{version,build-config,buildflags,config}.h
-# Phase 2 (continued): subdir('tools')   # winpr-tools (if enabled) — deferred
+
+# winpr-tools (CMake: WITH_WINPR_TOOLS; default ON for desktop non-mbedTLS builds)
+tools_default = not is_android and not with_mbedtls
+winpr_tools_feat = get_option('with_winpr_tools')
+with_winpr_tools = winpr_tools_feat.enabled() or (winpr_tools_feat.auto() and tools_default)
+winpr_tools_dep = dependency('', required : false)
+if with_winpr_tools
+  subdir('tools')
+endif
