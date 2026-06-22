@@ -6,5 +6,9 @@ if get_option('with_sample')
   subdir('Sample')
 endif
 
-# Further 5b work: shadow (X11/Win/Mac), proxy (+ modules), Windows platform server.
-# shadow additionally requires the rdtk toolkit.
+# Proxy server (requires the client common library, like CMake links freerdp-client).
+if get_option('with_proxy') and get_option('with_client_common')
+  subdir('proxy')
+endif
+
+# Further 5b work: shadow (X11/Win/Mac, needs rdtk), Windows platform server.

@@ -56,6 +56,12 @@ option('with_shadow', type : 'boolean', value : true,
        description : 'Build shadow server (CMake: WITH_SHADOW)')
 option('with_proxy', type : 'boolean', value : true,
        description : 'Build proxy server (CMake: WITH_PROXY)')
+option('with_proxy_app', type : 'boolean', value : true,
+       description : 'Compile proxy application (CMake: WITH_PROXY_APP)')
+option('with_proxy_modules', type : 'boolean', value : true,
+       description : 'Compile proxy modules (CMake: WITH_PROXY_MODULES)')
+option('with_proxy_emulate_smartcard', type : 'boolean', value : false,
+       description : 'Compile proxy smartcard emulation (CMake: WITH_PROXY_EMULATE_SMARTCARD)')
 option('with_platform_server', type : 'boolean', value : true,
        description : 'Build platform specific server (CMake: WITH_PLATFORM_SERVER)')
 option('with_rdtk', type : 'boolean', value : true,
