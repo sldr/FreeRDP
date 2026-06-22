@@ -1,0 +1,300 @@
+# FreeRDP Meson build options
+#
+# This file mirrors the CMake options defined in:
+#   - CMakeLists.txt (top level)
+#   - cmake/ConfigOptions.cmake
+#   - cmake/CommonConfigOptions.cmake
+#   - cmake/PlatformDefaults.cmake
+#   - winpr/CMakeLists.txt (WinPR specific)
+#
+# Conventions:
+#   * Plain on/off CMake options  -> boolean (matching CMake default)
+#   * Auto-detected dependency    -> feature ('auto' == CMake's "${X_FOUND}" default)
+#     options (find_feature/find_package driven)
+#   * Per-channel options are defined in Phase 4 (channels/) using the same
+#     CHANNEL_<NAME>[/_CLIENT/_SERVER] naming.
+#
+# NOTE: built-in Meson options replace several CMake modules and are NOT
+# redefined here:
+#   BUILD_SHARED_LIBS                 -> default_library {shared,static,both}
+#   CMAKE_POSITION_INDEPENDENT_CODE   -> b_staticpic / default behavior
+#   CMAKE_INTERPROCEDURAL_OPTIMIZATION-> b_lto
+#   MSVCRuntime.cmake                 -> b_vscrt
+#   CompilerSanitizerOptions.cmake    -> b_sanitize
+#   WITH_CCACHE                       -> b_ccache
+
+############################################################
+# Package identity (top-level CMakeLists.txt)
+############################################################
+option('vendor', type : 'string', value : 'FreeRDP',
+       description : 'FreeRDP package vendor (CMake: VENDOR)')
+option('product', type : 'string', value : 'FreeRDP',
+       description : 'FreeRDP package name (CMake: PRODUCT)')
+option('project_url', type : 'string', value : 'https://freerdp.com',
+       description : 'FreeRDP package url (CMake: PROJECT_URL)')
+
+############################################################
+# Top-level feature toggles
+############################################################
+option('unified_build', type : 'boolean', value : true,
+       description : 'Build WinPR, uwac, RdTk and FreeRDP in one go (CMake: FREERDP_UNIFIED_BUILD)')
+option('with_client_common', type : 'boolean', value : true,
+       description : 'Build client common library (CMake: WITH_CLIENT_COMMON)')
+option('with_client', type : 'boolean', value : true,
+       description : 'Build client binaries (CMake: WITH_CLIENT)')
+option('with_client_sdl', type : 'feature', value : 'auto',
+       description : '[experimental] Build SDL client (CMake: WITH_CLIENT_SDL)')
+option('with_client_interface', type : 'boolean', value : false,
+       description : 'Build clients as a library with an interface (CMake: WITH_CLIENT_INTERFACE)')
+option('client_interface_shared', type : 'boolean', value : false,
+       description : 'Build clients as a shared library with an interface (CMake: CLIENT_INTERFACE_SHARED)')
+option('with_server', type : 'boolean', value : true,
+       description : 'Build server binaries (CMake: WITH_SERVER)')
+option('with_server_interface', type : 'boolean', value : true,
+       description : 'Build servers as a library with an interface (CMake: WITH_SERVER_INTERFACE)')
+option('with_shadow', type : 'boolean', value : true,
+       description : 'Build shadow server (CMake: WITH_SHADOW)')
+option('with_proxy', type : 'boolean', value : true,
+       description : 'Build proxy server (CMake: WITH_PROXY)')
+option('with_platform_server', type : 'boolean', value : true,
+       description : 'Build platform specific server (CMake: WITH_PLATFORM_SERVER)')
+option('with_rdtk', type : 'boolean', value : true,
+       description : 'Build rdtk toolkit (CMake: WITH_RDTK)')
+option('with_channels', type : 'boolean', value : true,
+       description : 'Build virtual channel plugins (CMake: WITH_CHANNELS)')
+option('with_client_channels', type : 'boolean', value : true,
+       description : 'Build client virtual channel plugins (CMake: WITH_CLIENT_CHANNELS)')
+option('with_server_channels', type : 'boolean', value : true,
+       description : 'Build server virtual channel plugins (CMake: WITH_SERVER_CHANNELS)')
+option('with_sample', type : 'boolean', value : true,
+       description : 'Build sample code (CMake: WITH_SAMPLE)')
+option('with_third_party', type : 'boolean', value : false,
+       description : 'Build third-party components (CMake: WITH_THIRD_PARTY)')
+
+############################################################
+# Platform clients (gated by host system in meson.build)
+############################################################
+option('with_x11', type : 'feature', value : 'auto',
+       description : 'Build X11 client/server (CMake: WITH_X11)')
+option('with_wayland', type : 'feature', value : 'auto',
+       description : 'Build Wayland client (CMake: WITH_WAYLAND)')
+option('with_client_mac', type : 'boolean', value : true,
+       description : 'Build macOS native client (CMake: WITH_CLIENT_MAC)')
+option('with_fuse', type : 'feature', value : 'auto',
+       description : 'Build clipboard with FUSE file copy support; auto = on for Linux/BSD (CMake: WITH_FUSE)')
+option('with_sso_mib', type : 'boolean', value : false,
+       description : 'Build client with sso-mib support (CMake: WITH_SSO_MIB)')
+
+############################################################
+# Crypto / security
+############################################################
+option('with_openssl', type : 'feature', value : 'enabled',
+       description : 'Use OpenSSL crypto backend (CMake: WITH_OPENSSL, REQUIRED)')
+option('with_libressl', type : 'boolean', value : false,
+       description : 'Build with LibreSSL (CMake: WITH_LIBRESSL)')
+option('with_mbedtls', type : 'feature', value : 'auto',
+       description : 'Use mbedTLS crypto backend (CMake: WITH_MBEDTLS)')
+option('with_smartcard_emulate', type : 'boolean', value : true,
+       description : 'Emulate smartcards instead of redirecting readers (CMake: WITH_SMARTCARD_EMULATE)')
+option('with_pcsc', type : 'feature', value : 'auto',
+       description : 'Smart card device redirection via PCSC (CMake: WITH_PCSC)')
+option('with_pcsc_winpr', type : 'boolean', value : false,
+       description : 'Use WinPR provided PCSC (CMake: WITH_PCSC_WINPR)')
+option('with_aad', type : 'feature', value : 'auto',
+       description : 'Compile with support for Azure AD authentication (CMake: WITH_AAD)')
+
+############################################################
+# Codecs / media
+############################################################
+option('with_ffmpeg', type : 'feature', value : 'auto',
+       description : 'Enable FFmpeg for audio/video encoding/decoding (CMake: WITH_FFMPEG)')
+option('with_dsp_ffmpeg', type : 'boolean', value : true,
+       description : 'Use FFmpeg for audio encoding/decoding (CMake: WITH_DSP_FFMPEG)')
+option('with_video_ffmpeg', type : 'boolean', value : true,
+       description : 'Use FFmpeg for video encoding/decoding (CMake: WITH_VIDEO_FFMPEG)')
+option('with_vaapi', type : 'boolean', value : false,
+       description : 'Use FFmpeg VAAPI (CMake: WITH_VAAPI)')
+option('with_vaapi_h264_encoding', type : 'boolean', value : true,
+       description : 'Use FFmpeg VAAPI hardware H264 encoding (CMake: WITH_VAAPI_H264_ENCODING)')
+option('with_openh264', type : 'feature', value : 'auto',
+       description : 'Use OpenH264 library (CMake: WITH_OPENH264)')
+option('with_openh264_loading', type : 'boolean', value : false,
+       description : 'Use LoadLibrary to load openh264 at runtime (CMake: WITH_OPENH264_LOADING)')
+option('with_media_foundation', type : 'boolean', value : false,
+       description : 'Enable H264 media foundation decoder, Windows only (CMake: WITH_MEDIA_FOUNDATION)')
+option('with_gsm', type : 'feature', value : 'auto',
+       description : 'GSM audio codec library (CMake: WITH_GSM)')
+option('with_lame', type : 'feature', value : 'auto',
+       description : 'lame MP3 audio codec library (CMake: WITH_LAME)')
+option('with_faad2', type : 'feature', value : 'auto',
+       description : 'FAAD2 AAC audio decoder library (CMake: WITH_FAAD2)')
+option('with_faac', type : 'feature', value : 'auto',
+       description : 'FAAC AAC audio encoder library (CMake: WITH_FAAC)')
+option('with_fdk_aac', type : 'feature', value : 'disabled',
+       description : 'Enable FDK_AAC support (CMake: WITH_FDK_AAC)')
+option('with_opus', type : 'feature', value : 'auto',
+       description : 'Compile with opus codec support (CMake: WITH_OPUS)')
+option('with_soxr', type : 'feature', value : 'auto',
+       description : 'SOX audio resample library (CMake: WITH_SOXR)')
+option('with_jpeg', type : 'boolean', value : false,
+       description : 'Use JPEG decoding (CMake: WITH_JPEG)')
+option('with_cairo', type : 'boolean', value : false,
+       description : 'Use CAIRO image library for screen resizing (CMake: WITH_CAIRO)')
+option('with_swscale', type : 'boolean', value : true,
+       description : 'Use SWScale image library for screen resizing (CMake: WITH_SWSCALE)')
+option('with_opencl', type : 'feature', value : 'disabled',
+       description : '[experimental] Enable OpenCL support for primitives (CMake: WITH_OPENCL)')
+option('with_dsp_experimental', type : 'boolean', value : false,
+       description : 'Enable experimental sound encoder/decoder formats (CMake: WITH_DSP_EXPERIMENTAL)')
+
+############################################################
+# Audio backends (gated by host system in meson.build)
+############################################################
+option('with_alsa', type : 'feature', value : 'auto',
+       description : 'Use ALSA for sound (CMake: WITH_ALSA)')
+option('with_pulse', type : 'feature', value : 'auto',
+       description : 'Use PulseAudio for sound (CMake: WITH_PULSE)')
+option('with_oss', type : 'feature', value : 'auto',
+       description : 'Use OSS for sound (CMake: WITH_OSS)')
+option('with_sndio', type : 'feature', value : 'auto',
+       description : 'Use sndio for sound, OpenBSD (CMake: WITH_SNDIO)')
+option('with_winmm', type : 'boolean', value : true,
+       description : 'Use Windows Multimedia, Windows only (CMake: WITH_WINMM)')
+option('with_macaudio', type : 'boolean', value : true,
+       description : 'Enable macOS CoreAudio backend (CMake: WITH_MACAUDIO)')
+
+############################################################
+# Deprecated symbol control
+############################################################
+option('with_freerdp_deprecated', type : 'boolean', value : false,
+       description : 'Build FreeRDP deprecated symbols (CMake: WITH_FREERDP_DEPRECATED)')
+option('without_freerdp_3x_deprecated', type : 'boolean', value : false,
+       description : 'Do not build FreeRDP 3x deprecated symbols (CMake: WITHOUT_FREERDP_3x_DEPRECATED)')
+option('with_freerdp_deprecated_commandline', type : 'boolean', value : false,
+       description : 'Build FreeRDP deprecated command line options (CMake: WITH_FREERDP_DEPRECATED_COMMANDLINE)')
+
+############################################################
+# Versioning / paths
+############################################################
+option('with_library_versioning', type : 'boolean', value : true,
+       description : 'Use library version triplet (CMake: WITH_LIBRARY_VERSIONING)')
+option('with_binary_versioning', type : 'boolean', value : false,
+       description : 'Use binary versioning (CMake: WITH_BINARY_VERSIONING)')
+option('with_resource_versioning', type : 'boolean', value : false,
+       description : 'Use resource versioning (CMake: WITH_RESOURCE_VERSIONING)')
+option('use_version_from_git_tag', type : 'boolean', value : true,
+       description : 'Extract FreeRDP version from git tag (CMake: USE_VERSION_FROM_GIT_TAG)')
+option('with_absolute_plugin_load_paths', type : 'feature', value : 'auto',
+       description : 'Load plugins with absolute paths; auto = platform default, OFF on Windows/Android (CMake: WITH_ABSOLUTE_PLUGIN_LOAD_PATHS)')
+option('with_full_config_path', type : 'boolean', value : false,
+       description : 'Use <appdata>/Vendor/Product config directory (CMake: WITH_FULL_CONFIG_PATH)')
+option('proxy_plugindir', type : 'string', value : '',
+       description : 'Override proxy plugins install directory (CMake: PROXY_PLUGINDIR)')
+
+############################################################
+# Documentation / tooling
+############################################################
+option('with_manpages', type : 'boolean', value : true,
+       description : 'Generate manpages (CMake: WITH_MANPAGES; default OFF on Windows/OpenBSD)')
+option('with_clang_format', type : 'boolean', value : false,
+       description : 'Detect clang-format and add clangformat target (CMake: WITH_CLANG_FORMAT)')
+
+############################################################
+# Profiling / instrumentation
+############################################################
+option('with_profiler', type : 'boolean', value : false,
+       description : 'Compile profiler (CMake: WITH_PROFILER)')
+option('with_gprof', type : 'boolean', value : false,
+       description : 'Compile with GProf profiler (CMake: WITH_GPROF)')
+option('with_debug_symbols', type : 'boolean', value : false,
+       description : 'Pack debug symbols to installer (CMake: WITH_DEBUG_SYMBOLS)')
+
+############################################################
+# Testing / fuzzing / benchmarks
+############################################################
+option('build_testing', type : 'boolean', value : false,
+       description : 'Build unit tests, compatible with packaging (CMake: BUILD_TESTING)')
+option('build_testing_internal', type : 'boolean', value : false,
+       description : 'Build unit tests, CI only, not for packaging (CMake: BUILD_TESTING_INTERNAL)')
+option('build_testing_no_h264', type : 'boolean', value : false,
+       description : 'Skip building h264 unit tests (CMake: BUILD_TESTING_NO_H264)')
+option('tests_wtsapi_extra', type : 'boolean', value : false,
+       description : 'Build extra WTSAPI tests, interactive (CMake: TESTS_WTSAPI_EXTRA)')
+option('build_comm_tests', type : 'boolean', value : false,
+       description : 'Build comm related tests, require comm port (CMake: BUILD_COMM_TESTS)')
+option('build_benchmark', type : 'boolean', value : false,
+       description : 'Build benchmark tools (CMake: BUILD_BENCHMARK)')
+option('build_fuzzers', type : 'boolean', value : false,
+       description : 'Build fuzzing tests (CMake: BUILD_FUZZERS)')
+option('oss_fuzz', type : 'boolean', value : false,
+       description : 'OSS-Fuzz build, uses $LIB_FUZZING_ENGINE (CMake: OSS_FUZZ)')
+
+############################################################
+# Symbol export / assertions
+############################################################
+option('export_all_symbols', type : 'boolean', value : false,
+       description : 'Export all symbols, drops -fvisibility=hidden (CMake: EXPORT_ALL_SYMBOLS)')
+option('with_verbose_winpr_assert', type : 'boolean', value : true,
+       description : 'Compile with verbose WINPR_ASSERT (CMake: WITH_VERBOSE_WINPR_ASSERT)')
+
+############################################################
+# Windows specifics
+############################################################
+option('windows_version', type : 'combo',
+       choices : ['WINXP', 'WIN7', 'WIN8', 'WIN10'], value : 'WIN7',
+       description : 'Target Windows API version (CMake: CMAKE_WINDOWS_VERSION)')
+option('with_win8', type : 'boolean', value : false,
+       description : 'Use Windows 8 libraries (CMake: WITH_WIN8)')
+
+############################################################
+# WinPR specific (winpr/CMakeLists.txt)
+############################################################
+option('with_winpr_tools', type : 'feature', value : 'auto',
+       description : 'Build WinPR helper binaries (CMake: WITH_WINPR_TOOLS)')
+option('with_winpr_deprecated', type : 'boolean', value : false,
+       description : 'Build deprecated WinPR symbols (CMake: WITH_WINPR_DEPRECATED)')
+option('with_winpr_json', type : 'feature', value : 'auto',
+       description : 'Compile WinPR with JSON support (CMake: WITH_WINPR_JSON)')
+option('with_native_sspi', type : 'boolean', value : true,
+       description : 'Use native Windows SSPI, Windows only (CMake: WITH_NATIVE_SSPI)')
+option('with_smartcard_inspect', type : 'boolean', value : false,
+       description : 'Enable SmartCard API Inspector (CMake: WITH_SMARTCARD_INSPECT)')
+option('with_internal_rc4', type : 'boolean', value : false,
+       description : 'Use compiled-in RC4 instead of OpenSSL/mbedTLS (CMake: WITH_INTERNAL_RC4)')
+option('with_internal_md4', type : 'boolean', value : false,
+       description : 'Use compiled-in MD4 instead of OpenSSL/mbedTLS (CMake: WITH_INTERNAL_MD4)')
+option('with_internal_md5', type : 'boolean', value : false,
+       description : 'Use compiled-in MD5 instead of OpenSSL/mbedTLS (CMake: WITH_INTERNAL_MD5)')
+option('with_unicode_builtin', type : 'boolean', value : false,
+       description : 'Use built-in Unicode conversion instead of system libraries (CMake: WITH_UNICODE_BUILTIN)')
+option('with_krb5', type : 'feature', value : 'auto',
+       description : 'Compile support for Kerberos authentication; auto = on for non-Windows/Apple/Android (CMake: WITH_KRB5)')
+option('with_timezone_icu', type : 'boolean', value : false,
+       description : 'Use ICU for improved timezone mapping (CMake: WITH_TIMEZONE_ICU)')
+option('with_systemd', type : 'feature', value : 'auto',
+       description : 'Export wLog to the systemd journal (CMake: WITH_SYSTEMD)')
+
+############################################################
+# SIMD (cmake/DetectIntrinsicSupport.cmake)
+############################################################
+option('with_simd', type : 'boolean', value : true,
+       description : 'Enable SIMD optimized primitives (CMake: WITH_SIMD)')
+option('with_avx2', type : 'boolean', value : true,
+       description : 'Enable AVX2 optimized primitives (CMake: WITH_AVX2, default ON when WITH_SIMD)')
+
+############################################################
+# Debug message switches (CMake: WITH_DEBUG_*)
+# All default OFF (DEFAULT_DEBUG_OPTION); WITH_DEBUG_ALL turns them all on.
+############################################################
+option('with_debug_all', type : 'boolean', value : false,
+       description : 'Print all debug messages, slow + leaks info (CMake: WITH_DEBUG_ALL)')
+option('debug_channels', type : 'array',
+       choices : [
+         'certificate', 'capabilities', 'channels', 'cliprdr', 'codecs', 'rdpgfx',
+         'dvc', 'tsmf', 'kbd', 'license', 'nego', 'nla', 'tsg', 'rail', 'rdp',
+         'rdpei', 'redir', 'rdpdr', 'rfx', 'scard', 'snd', 'svc', 'transport',
+         'timezone', 'urbdrc', 'wnd', 'x11_local_movesize', 'x11', 'xv', 'ringbuffer',
+         'threads', 'events', 'mutex', 'ntlm'
+       ],
+       value : [],
+       description : 'Enable individual WITH_DEBUG_<X> message groups')
