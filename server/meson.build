@@ -11,4 +11,9 @@ if get_option('with_proxy') and get_option('with_client_common')
   subdir('proxy')
 endif
 
-# Further 5b work: shadow (X11/Win/Mac, needs rdtk), Windows platform server.
+# Shadow server (CMake skips it on Apple — "Mac shadow server no longer compiles").
+if get_option('with_shadow') and not is_darwin
+  subdir('shadow')
+endif
+
+# Further 5b work: Windows platform server.
