@@ -32,7 +32,9 @@ freerdp_shadow_dep = declare_dependency(
 )
 
 # Platform capture subsystem -> static lib `freerdp_shadow_subsystem_impl`.
-if get_option('with_shadow_subsystem')
+# Needs a real backend: Win (Windows) or X11 (Linux/BSD with X11). Without one
+# (e.g. X11 disabled) fall back to the dummy Sample subsystem so shadow still builds.
+if get_option('with_shadow_subsystem') and (is_windows or with_x11)
   if is_windows
     subdir('Win')
   else
