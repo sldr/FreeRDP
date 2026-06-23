@@ -173,6 +173,48 @@ channel_registry = [
   },
 ]
 
+# Device-redirection subsystem clients (printer/urbdrc). Backend deps are resolved
+# here; a subsystem is only built when its dependency is present.
+# (rdpecam and tsmf are deferred: they hard-require FFmpeg+SWScale+V4L / are deprecated.)
+cups_dep = dependency('cups', version : '>=2.0', required : false)
+libusb_dep = dependency('libusb-1.0', required : false)
+
+printer_subsystems = []
+if cups_dep.found()
+  printer_subsystems += {'name' : 'cups', 'srcs' : ['printer/client/cups/printer_cups.c'], 'deps' : [cups_dep]}
+endif
+if is_windows
+  printer_subsystems += {'name' : 'win', 'srcs' : ['printer/client/win/printer_win.c'], 'deps' : []}
+endif
+channel_registry += [{
+  'name' : 'printer', 'type' : 'static',
+  'client' : {
+    'srcs' : ['printer/client/printer_main.c'],
+    'entry' : 'DeviceServiceEntry',
+    'subsystems' : printer_subsystems,
+  },
+}]
+
+# urbdrc requires libusb (CMake: find_package(libusb-1.0 REQUIRED) at channel level).
+urbdrc_entry = {
+  'name' : 'urbdrc', 'type' : 'dynamic',
+  'common' : ['urbdrc/common/msusb.c', 'urbdrc/common/urbdrc_helpers.c'],
+}
+if libusb_dep.found()
+  urbdrc_entry += {
+    'client' : {
+      'srcs' : ['urbdrc/client/data_transfer.c', 'urbdrc/client/urbdrc_main.c'],
+      'entry' : 'DVCPluginEntry',
+      'subsystems' : [{
+        'name' : 'libusb',
+        'srcs' : ['urbdrc/client/libusb/libusb_udevman.c', 'urbdrc/client/libusb/libusb_udevice.c'],
+        'deps' : [libusb_dep, threads_dep],
+      }],
+    },
+  }
+endif
+channel_registry += [urbdrc_entry]
+
 channel_common_deps = [freerdp_dep, winpr_dep]
 
 ############################################################
@@ -265,23 +307,34 @@ foreach ch : channel_registry
       gnu_symbol_visibility : default_symbol_visibility,
     )
 
-    # Audio subsystem backends (audin/rdpsnd)
-    subsystem_names = []
-    if cl.has_key('audio') and cl['audio']
+    # Subsystem backends. Two sources: the audio backend set (audin/rdpsnd via
+    # 'audio':true) and explicit per-channel subsystems (printer/urbdrc/... via
+    # 'subsystems': [{name, srcs, deps[, extra_inc]}]).
+    subsystems = []
+    if cl.get('audio', false)
       foreach be : audio_backends
-        sub = be['name']
-        sub_src = '@0@/client/@1@/@0@_@1@.@2@'.format(cname, sub, be['ext'])
-        channels_client_objlibs += static_library(
-          '@0@-client-@1@'.format(cname, sub),
-          files(sub_src),
-          include_directories : client_inc + [include_directories(cname / 'client')] + be.get('extra_inc', []),
-          dependencies : channel_common_deps + be['deps'],
-          gnu_symbol_visibility : default_symbol_visibility,
-        )
-        channels_client_link_deps += be['deps']
-        subsystem_names += sub
+        subsystems += {
+          'name' : be['name'],
+          'srcs' : ['@0@/client/@1@/@0@_@1@.@2@'.format(cname, be['name'], be['ext'])],
+          'deps' : be['deps'],
+          'extra_inc' : be.get('extra_inc', []),
+        }
       endforeach
     endif
+    subsystems += cl.get('subsystems', [])
+
+    subsystem_names = []
+    foreach ss : subsystems
+      channels_client_objlibs += static_library(
+        '@0@-client-@1@'.format(cname, ss['name']),
+        files(ss['srcs']),
+        include_directories : client_inc + [include_directories(cname / 'client')] + ss.get('extra_inc', []),
+        dependencies : channel_common_deps + ss['deps'],
+        gnu_symbol_visibility : default_symbol_visibility,
+      )
+      channels_client_link_deps += ss['deps']
+      subsystem_names += ss['name']
+    endforeach
 
     entries_json = '["' + '","'.join(entries) + '"]'
     subs_json = subsystem_names.length() > 0 \
