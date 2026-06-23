@@ -5,6 +5,8 @@ libfreerdp_srcs += files(
   'string.c', 'gfx.c', 'drdynvc.c', 'smartcard_operations.c',
   'smartcard_pack.c', 'smartcard_call.c', 'stopwatch.c', 'http.c',
 )
+# Platform signal handling (master split signal.c, since 3.16)
+libfreerdp_srcs += files(is_windows ? 'signal_win32.c' : 'signal_posix.c')
 
 if is_windows
   libfreerdp_priv_deps += cc.find_library('ws2_32')

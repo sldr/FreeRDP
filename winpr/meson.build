@@ -155,22 +155,28 @@ if with_internal_md5
   winpr_config.set('WITH_INTERNAL_MD5', true)
 endif
 
-# JSON support (cJSON or json-c) -> WITH_WINPR_JSON; gates WITH_AAD.
-# Mirrors cmake/JsonDetect.cmake (cJSON preferred, json-c fallback).
+# JSON support -> WITH_WINPR_JSON; gates WITH_AAD. Master selects one backend
+# (jansson > json-c > cJSON) and compiles a matching json/<backend>.c, else a stub.
 winpr_json_feature = get_option('with_winpr_json')
 winpr_json_dep = dependency('', required : false)
 winpr_json_define = ''
+winpr_json_src = 'json/json-stub.c'
 if winpr_json_feature.allowed()
+  jansson_dep = dependency('jansson', required : false)
+  jsonc_dep = dependency('json-c', required : false)
   cjson_dep = dependency('libcjson', required : false)
-  if cjson_dep.found()
+  if jansson_dep.found()
+    winpr_json_dep = jansson_dep
+    winpr_json_define = 'WITH_JANSSON'
+    winpr_json_src = 'json/jansson.c'
+  elif jsonc_dep.found()
+    winpr_json_dep = jsonc_dep
+    winpr_json_define = 'WITH_JSONC'
+    winpr_json_src = 'json/json-c.c'
+  elif cjson_dep.found()
     winpr_json_dep = cjson_dep
     winpr_json_define = 'WITH_CJSON'
-  else
-    jsonc_dep = dependency('json-c', required : false)
-    if jsonc_dep.found()
-      winpr_json_dep = jsonc_dep
-      winpr_json_define = 'WITH_JSONC'
-    endif
+    winpr_json_src = 'json/c-json.c'
   endif
 endif
 with_winpr_json = winpr_json_dep.found()

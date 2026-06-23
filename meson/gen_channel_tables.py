@@ -28,7 +28,7 @@ def entry_kind(entry):
                 'extern BOOL VCAPITYPE {n}(PCHANNEL_ENTRY_POINTS);')
     if entry == 'VirtualChannelEntryEx':
         return ('STATIC_ENTRY_VCEX', '.csevcex',
-                'extern BOOL VCAPITYPE {n}(PCHANNEL_ENTRY_POINTS,PVOID);')
+                'extern BOOL VCAPITYPE {n}(PCHANNEL_ENTRY_POINTS_EX,PVOID);')
     if entry.endswith('DVCPluginEntry'):
         return ('STATIC_ENTRY_DVC', '.csedvc',
                 'extern UINT VCAPITYPE {n}(IDRDYNVC_ENTRY_POINTS* pEntryPoints);')

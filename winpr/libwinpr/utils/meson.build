@@ -37,8 +37,8 @@ endif
 asn1_srcs = ['asn1/asn1.c']
 
 utils_srcs = [
-  'ini.c', 'sam.c', 'ntlm.c', 'image.c', 'print.c', 'stream.c', 'strlst.c',
-  'debug.c', 'winpr.c', 'cmdline.c', 'ssl.c',
+  'atexit.c', 'ini.c', 'sam.c', 'ntlm.c', 'image.c', 'print.c', 'stream.c',
+  'strlst.c', 'debug.c', 'winpr.c', 'cmdline.c', 'ssl.c',
 ]
 
 # Backtrace backends
@@ -60,7 +60,8 @@ if winpr_json_define != ''
   winpr_priv_deps += winpr_json_dep
 endif
 
-winpr_srcs += files('json/json.c')
+# json/json.c always + the selected backend (json/<backend>.c or json-stub.c)
+winpr_srcs += files('json/json.c', winpr_json_src)
 winpr_srcs += files(utils_srcs + collections_srcs + wlog_srcs + asn1_srcs)
 
 if is_unix

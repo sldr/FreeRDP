@@ -8,8 +8,10 @@ codec_srcs = [
   'interleaved.c', 'progressive.c', 'rfx_decode.c', 'rfx_dwt.c',
   'rfx_encode.c', 'rfx_quantization.c', 'rfx_rlgr.c', 'rfx.c', 'region.c',
   'nsc.c', 'nsc_encode.c', 'ncrush.c', 'xcrush.c', 'mppc.c', 'zgfx.c',
-  'clear.c', 'jpeg.c', 'h264.c', 'yuv.c',
+  'clear.c', 'jpeg.c', 'h264.c', 'yuv.c', 'video.c',
 ]
+# av1.c (WITH_GFX_AV1) and image_ffmpeg.c (WITH_SWSCALE_LOADING) are off by
+# default in master; deferred until those options are added.
 codec_deps = [winpr_dep]
 
 if with_dsp_ffmpeg

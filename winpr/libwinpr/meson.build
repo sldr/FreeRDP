@@ -65,7 +65,7 @@ endif
 # Module subdirectories (CMake: WINPR_CORE + WINPR_LEVEL2)
 ############################################################
 winpr_core_modules = [
-  'synch', 'library', 'file', 'comm', 'pipe', 'interlocked', 'security',
+  'synch', 'library', 'file', 'comm', 'credentials', 'pipe', 'interlocked', 'security',
   'environment', 'crypto', 'registry', 'path', 'io', 'memory', 'ncrypt',
   'input', 'shell', 'utils', 'error', 'timezone', 'sysinfo', 'pool', 'handle',
   'thread',

@@ -177,10 +177,13 @@ channel_registry = [
 # here; a subsystem is only built when its dependency is present.
 # (rdpecam and tsmf are deferred: they hard-require FFmpeg+SWScale+V4L / are deprecated.)
 cups_dep = dependency('cups', version : '>=2.0', required : false)
+# CUPS historically ships cups-config (not pkg-config), so dependency('cups') can
+# report found via the runtime lib while the dev header is absent. Require the header.
+have_cups = cups_dep.found() and cc.has_header('cups/cups.h', dependencies : cups_dep)
 libusb_dep = dependency('libusb-1.0', required : false)
 
 printer_subsystems = []
-if cups_dep.found()
+if have_cups
   printer_subsystems += {'name' : 'cups', 'srcs' : ['printer/client/cups/printer_cups.c'], 'deps' : [cups_dep]}
 endif
 if is_windows
@@ -214,6 +217,22 @@ if libusb_dep.found()
   }
 endif
 channel_registry += [urbdrc_entry]
+
+# rdpewa: WebAuthn redirection (since 3.x). Client needs libcbor + libfido2.
+rdpewa_entry = {'name' : 'rdpewa', 'type' : 'dynamic'}
+libcbor_dep = dependency('libcbor', required : false)
+libfido2_dep = dependency('libfido2', required : false)
+if libcbor_dep.found() and libfido2_dep.found()
+  rdpewa_entry += {
+    'client' : {
+      'srcs' : ['rdpewa/client/rdpewa_main.c', 'rdpewa/client/rdpewa_cbor.c',
+                'rdpewa/client/rdpewa_fido.c'],
+      'entry' : 'DVCPluginEntry',
+      'deps' : [libcbor_dep, libfido2_dep],
+    },
+  }
+endif
+channel_registry += [rdpewa_entry]
 
 channel_common_deps = [freerdp_dep, winpr_dep]
 
@@ -291,7 +310,9 @@ foreach ch : channel_registry
   # + include_directories(common)). Compile those sources into each side and add
   # the common/ dir to the include path.
   common_files = ch.has_key('common') ? files(ch['common']) : []
-  common_inc = ch.has_key('common') ? [include_directories(cname / 'common')] : []
+  # A channel's common/ dir holds shared headers (and sometimes sources); add it
+  # to the include path whenever it exists (CMake: include_directories(common)).
+  common_inc = fs.is_dir(cname / 'common') ? [include_directories(cname / 'common')] : []
   client_inc = [freerdp_public_inc, winpr_inc, channel_inc] + common_inc
   channel_built = false
 
@@ -303,9 +324,10 @@ foreach ch : channel_registry
       libname,
       files(cl['srcs']) + common_files,
       include_directories : client_inc,
-      dependencies : channel_common_deps,
+      dependencies : channel_common_deps + cl.get('deps', []),
       gnu_symbol_visibility : default_symbol_visibility,
     )
+    channels_client_link_deps += cl.get('deps', [])
 
     # Subsystem backends. Two sources: the audio backend set (audin/rdpsnd via
     # 'audio':true) and explicit per-channel subsystems (printer/urbdrc/... via
