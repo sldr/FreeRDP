@@ -3,7 +3,7 @@
 x11_dep = dependency('x11', required : true)
 
 xf_srcs = files(
-  'xf_utils.c', 'xf_gfx.c', 'xf_rail.c', 'xf_input.c', 'xf_event.c',
+  'xf_utils.c', 'xf_x11_utils.c', 'xf_gfx.c', 'xf_rail.c', 'xf_input.c', 'xf_event.c',
   'xf_floatbar.c', 'xf_channels.c', 'xf_cliprdr.c', 'xf_monitor.c',
   'xf_disp.c', 'xf_graphics.c', 'xf_keyboard.c', 'keyboard_x11.c',
   'xkb_layout_ids.c', 'xf_video.c', 'xf_window.c', 'xf_client.c',
