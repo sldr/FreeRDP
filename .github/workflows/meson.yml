@@ -49,7 +49,7 @@ jobs:
             libxi-dev libxrender-dev libxrandr-dev libxfixes-dev \
             libavcodec-dev libavutil-dev libswscale-dev libswresample-dev \
             libpulse-dev libasound2-dev libkrb5-dev libcjson-dev libfuse3-dev \
-            liburiparser-dev libsystemd-dev
+            liburiparser-dev libsystemd-dev libcups2-dev libusb-1.0-0-dev
 
       - name: Configure (core)
         if: matrix.preset == 'core'
