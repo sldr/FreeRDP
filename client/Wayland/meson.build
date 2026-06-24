@@ -1,4 +1,9 @@
 # Wayland client "wlfreerdp" (mirrors client/Wayland/CMakeLists.txt)
+wlfreerdp_deps = [freerdp_client_dep, freerdp_dep, winpr_dep, uwac_dep, wayland_client_dep]
+if m_dep.found()
+  wlfreerdp_deps += m_dep   # lround etc.; clang+--as-needed won't pull libm transitively
+endif
+
 wlfreerdp = executable(
   'wlfreerdp',
   files(
@@ -6,7 +11,7 @@ wlfreerdp = executable(
     'wlf_cliprdr.c', 'wlf_channels.c',
   ),
   include_directories : [freerdp_public_inc, winpr_inc, uwac_inc],
-  dependencies : [freerdp_client_dep, freerdp_dep, winpr_dep, uwac_dep, wayland_client_dep],
+  dependencies : wlfreerdp_deps,
   install : true,
   install_dir : get_option('bindir'),
 )
