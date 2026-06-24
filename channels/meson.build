@@ -113,13 +113,6 @@ channel_registry = [
     'server' : {'srcs' : ['rdpdr/server/rdpdr_main.c'], 'entry' : 'VirtualChannelEntry'},
   },
   {
-    'name' : 'rdpecam', 'type' : 'dynamic',
-    'server' : {
-      'srcs' : ['rdpecam/server/camera_device_enumerator_main.c', 'rdpecam/server/camera_device_main.c'],
-      'entry' : 'DVCPluginEntry',
-    },
-  },
-  {
     'name' : 'rdpei', 'type' : 'dynamic',
     'client' : {'srcs' : ['rdpei/client/rdpei_main.c', 'rdpei/rdpei_common.c'], 'entry' : 'DVCPluginEntry'},
     'server' : {'srcs' : ['rdpei/server/rdpei_main.c', 'rdpei/rdpei_common.c'], 'entry' : 'VirtualChannelEntry'},
@@ -234,6 +227,58 @@ if libcbor_dep.found() and libfido2_dep.found()
 endif
 channel_registry += [rdpewa_entry]
 
+# rdpear: Kerberos extended auth (non-Windows/Apple/Android, MIT krb5 only).
+rdpear_entry = {
+  'name' : 'rdpear', 'type' : 'dynamic',
+  'common' : ['rdpear/common/ndr.c', 'rdpear/common/rdpear_asn1.c', 'rdpear/common/rdpear_common.c'],
+}
+if not is_windows and not is_android and not is_darwin
+  rdpear_krb5 = dependency('mit-krb5', required : false)
+  if not rdpear_krb5.found()
+    rdpear_krb5 = dependency('krb5', required : false)  # MIT on most distros
+  endif
+  if rdpear_krb5.found()
+    rdpear_entry += {
+      'client' : {
+        'srcs' : ['rdpear/client/rdpear_main.c'],
+        'entry' : 'DVCPluginEntry', 'deps' : [rdpear_krb5],
+      },
+    }
+  endif
+endif
+channel_registry += [rdpear_entry]
+
+# rdpecam: camera redirection. Server is portable; client requires V4L (Linux) +
+# FFmpeg + SWScale, with a v4l subsystem that needs libusb.
+rdpecam_entry = {
+  'name' : 'rdpecam', 'type' : 'dynamic',
+  'server' : {
+    'srcs' : ['rdpecam/server/camera_device_enumerator_main.c', 'rdpecam/server/camera_device_main.c'],
+    'entry' : 'DVCPluginEntry',
+  },
+}
+if cc.has_header('linux/videodev2.h') and with_swscale and ffmpeg_found and swscale_dep.found()
+  rdpecam_client = {
+    'srcs' : ['rdpecam/client/camera_device_enum_main.c', 'rdpecam/client/camera_device_main.c',
+              'rdpecam/client/encoding.c'],
+    'entry' : 'DVCPluginEntry',
+    'deps' : [swscale_dep, avcodec_dep, avutil_dep],
+    'c_args' : ['-DWITH_V4L', '-DWITH_INPUT_FORMAT_H264', '-DWITH_INPUT_FORMAT_MJPG'],
+  }
+  if libusb_dep.found()
+    rdpecam_client += {
+      'subsystems' : [{
+        'name' : 'v4l',
+        'srcs' : ['rdpecam/client/v4l/camera_v4l.c', 'rdpecam/client/v4l/uvc_h264.c'],
+        'deps' : [libusb_dep],
+        'c_args' : ['-DWITH_V4L'],
+      }],
+    }
+  endif
+  rdpecam_entry += {'client' : rdpecam_client}
+endif
+channel_registry += [rdpecam_entry]
+
 channel_common_deps = [freerdp_dep, winpr_dep]
 
 ############################################################
@@ -325,6 +370,7 @@ foreach ch : channel_registry
       files(cl['srcs']) + common_files,
       include_directories : client_inc,
       dependencies : channel_common_deps + cl.get('deps', []),
+      c_args : cl.get('c_args', []),
       gnu_symbol_visibility : default_symbol_visibility,
     )
     channels_client_link_deps += cl.get('deps', [])
@@ -352,6 +398,7 @@ foreach ch : channel_registry
         files(ss['srcs']),
         include_directories : client_inc + [include_directories(cname / 'client')] + ss.get('extra_inc', []),
         dependencies : channel_common_deps + ss['deps'],
+        c_args : ss.get('c_args', []),
         gnu_symbol_visibility : default_symbol_visibility,
       )
       channels_client_link_deps += ss['deps']

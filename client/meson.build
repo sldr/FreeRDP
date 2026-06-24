@@ -11,8 +11,11 @@ endif
 if get_option('with_client') and with_x11
   subdir('X11')
 endif
-# Further frontends (Phase 5b cont.):
-#   SDL2/SDL3 (WITH_CLIENT_SDL), Wayland (WITH_WAYLAND), Mac (APPLE && !IOS)
+if get_option('with_client') and with_uwac
+  subdir('Wayland')
+endif
+# Further frontends:
+#   SDL2/SDL3 (WITH_CLIENT_SDL), Mac (APPLE && !IOS)
 
 if get_option('with_client') and get_option('with_sample')
   subdir('Sample')

@@ -184,6 +184,17 @@ wayland_feat = get_option('with_wayland')
 wayland_default = is_unix and not is_darwin and not is_android
 with_wayland = wayland_feat.enabled() or (wayland_feat.auto() and wayland_default)
 
+# uwac (Unified Wayland Client lib) + Wayland frontend prerequisites:
+# wayland-client, xkbcommon and the wayland-scanner code generator.
+with_uwac = false
+if with_wayland and not without_freerdp_3x_deprecated
+  wayland_scanner_prog = find_program('wayland-scanner', required : wayland_feat.enabled())
+  wayland_client_dep = dependency('wayland-client', required : wayland_feat.enabled())
+  wayland_cursor_dep = dependency('wayland-cursor', required : false)
+  xkbcommon_dep = dependency('xkbcommon', required : wayland_feat.enabled())
+  with_uwac = wayland_scanner_prog.found() and wayland_client_dep.found() and xkbcommon_dep.found()
+endif
+
 ############################################################
 # Core dependencies
 ############################################################
@@ -490,6 +501,11 @@ endif
 
 # Phase 3: libfreerdp (depends on winpr_dep)
 subdir('libfreerdp')
+
+# uwac (Unified Wayland Client) — deprecated-3x, built when Wayland is available.
+if with_uwac
+  subdir('uwac')
+endif
 
 # Phase 4: channels (build virtual channel plugins + static dispatch tables)
 freerdp_channels_client_dep = dependency('', required : false)
