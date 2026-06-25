@@ -76,3 +76,20 @@ pkgconfig.generate(
   subdirs : 'freerdp@0@'.format(freerdp_version_major),
   requires : 'freerdp@0@'.format(freerdp_version_major),
 )
+
+# CMake find_package(FreeRDP-Shadow) package
+cmake_packages += [{
+  'name' : 'FreeRDP-Shadow',
+  'version' : freerdp_version,
+  'cmake_subdir' : 'FreeRDP-Shadow@0@'.format(freerdp_version_major),
+  'template' : files('FreeRDP-ShadowConfig.cmake.in'),
+  'targets' : 'freerdp-shadow,@0@,@1@,freerdp-server|freerdp|winpr'.format(
+    libdir / (shared_lib_prefix + freerdp_shadow_libname + shared_lib_suffix), freerdp_include_dir),
+  'vars' : [
+    'FREERDP_VERSION=' + freerdp_version,
+    'FREERDP_VERSION_MAJOR=' + freerdp_version_major,
+    'FREERDP_VERSION_MINOR=' + freerdp_version_minor,
+    'FREERDP_VERSION_REVISION=' + freerdp_version_revision,
+    'PACKAGE_FREERDP_INCLUDE_DIR=${PACKAGE_PREFIX_DIR}/' + freerdp_include_dir,
+  ],
+}]

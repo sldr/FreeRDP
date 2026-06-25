@@ -387,6 +387,11 @@ debug_channels = get_option('debug_channels')
 ############################################################
 freerdp_build_config_list = []
 
+# CMake find_package() package descriptors, appended by each library's meson.build
+# and emitted at the end (see "CMake package files" below). Each entry:
+#   {name, version, version_major, cmake_subdir, template (file), targets, vars}
+cmake_packages = []
+
 ############################################################
 # Template / generator file handles (created here where the relative paths
 # are valid; consumed by include/freerdp/meson.build).
@@ -403,6 +408,7 @@ tmpl_buildflags_h = files('include' / 'config' / 'buildflags.h.in')
 tmpl_settings_keys_h = files('include' / 'config' / 'settings_keys.h.in')
 settings_types_private_h = files('include' / 'freerdp' / 'settings_types_private.h')
 gen_channel_tables_py = files('meson' / 'gen_channel_tables.py')
+gen_cmake_package_py = files('meson' / 'gen_cmake_package.py')
 tmpl_channel_tables = files('channels' / 'client' / 'tables.c.in')
 tmpl_oss_includes = files('cmake' / 'oss-includes.h.in')
 
@@ -527,6 +533,35 @@ endif
 if get_option('with_server')
   subdir('server')
 endif
+
+############################################################
+# CMake package files (find_package parity) for every installed library.
+# Emits <Name>Config.cmake + <Name>ConfigVersion.cmake + <Name>Targets.cmake,
+# installed to <libdir>/cmake/<cmake_subdir>. Replaces CMake's
+# configure_package_config_file + write_basic_package_version_file + install(EXPORT).
+############################################################
+foreach pkg : cmake_packages
+  pkg_cmake_dir = libdir / 'cmake' / pkg['cmake_subdir']
+  # rdtk/uwac templates include("rdtk.cmake"/"uwac.cmake") rather than the
+  # conventional "<Name>Targets.cmake"; honour an optional override.
+  pkg_targets_file = pkg.get('targets_file', pkg['name'] + 'Targets.cmake')
+  custom_target(
+    pkg['name'] + '-cmake-package',
+    output : [
+      pkg['name'] + 'Config.cmake',
+      pkg['name'] + 'ConfigVersion.cmake',
+      pkg_targets_file,
+    ],
+    command : [
+      python, gen_cmake_package_py, '@OUTDIR@', pkg['template'],
+      pkg['name'], pkg['version'], pkg_cmake_dir, pkg['targets'],
+      'TARGETS_FILENAME=' + pkg_targets_file,
+    ] + pkg['vars'],
+    depend_files : pkg['template'],
+    install : true,
+    install_dir : pkg_cmake_dir,
+  )
+endforeach
 
 # Phase 1: config headers. Generated last in CMake (after all WITH_*/CHANNEL_*
 # are known); kept here for now and re-ordered when later phases land.

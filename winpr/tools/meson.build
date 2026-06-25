@@ -41,6 +41,23 @@ pkgconfig.generate(
   requires : 'winpr@0@'.format(winpr_version_major),
 )
 
+# CMake find_package(WinPR-tools) package
+cmake_packages += [{
+  'name' : 'WinPR-tools',
+  'version' : winpr_version,
+  'cmake_subdir' : 'WinPR-tools@0@'.format(winpr_version_major),
+  'template' : files('WinPR-toolsConfig.cmake.in'),
+  'targets' : 'winpr-tools,@0@,@1@,winpr'.format(
+    libdir / (shared_lib_prefix + winpr_tools_libname + shared_lib_suffix), winpr_include_dir),
+  'vars' : [
+    'FREERDP_VERSION=' + winpr_version,
+    'WINPR_VERSION_MAJOR=' + winpr_version_major,
+    'WINPR_VERSION_MINOR=' + winpr_version_minor,
+    'WINPR_VERSION_REVISION=' + winpr_version_revision,
+    'PACKAGE_WINPR_INCLUDE_DIR=${PACKAGE_PREFIX_DIR}/' + winpr_include_dir,
+  ],
+}]
+
 # CLI tools (CMake: WITH_WINPR_TOOLS_CLI, default ON)
 executable('winpr-makecert', files('makecert-cli/main.c'),
   include_directories : winpr_inc,

@@ -201,6 +201,7 @@ winpr_tmpl_version = files('include' / 'config' / 'version.h.in')
 winpr_tmpl_buildconfig = files('include' / 'config' / 'build-config.h.in')
 winpr_tmpl_buildflags = files('include' / 'config' / 'buildflags.h.in')
 winpr_tmpl_config = files('include' / 'config' / 'config.h.in')
+winpr_config_cmake_in = files('WinPRConfig.cmake.in')
 
 # WinPR include search paths (source + generated)
 winpr_inc = include_directories('include')

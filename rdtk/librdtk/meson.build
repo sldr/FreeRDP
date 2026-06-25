@@ -33,3 +33,20 @@ pkgconfig.generate(
   filebase : 'rdtk@0@'.format(rdtk_version_major),
   subdirs : 'rdtk@0@'.format(rdtk_version_major),
 )
+
+# CMake find_package(rdtk) package (template includes rdtk.cmake, not rdtkTargets.cmake)
+cmake_packages += [{
+  'name' : 'rdtk',
+  'version' : rdtk_version,
+  'cmake_subdir' : 'rdtk@0@'.format(rdtk_version_major),
+  'template' : rdtk_config_cmake_in,
+  'targets_file' : 'rdtk.cmake',
+  'targets' : 'rdtk,@0@,@1@'.format(
+    libdir / (shared_lib_prefix + rdtk_libname + shared_lib_suffix), rdtk_include_dir),
+  'vars' : [
+    'RDTK_VERSION_MAJOR=' + rdtk_version_major,
+    'RDTK_VERSION_MINOR=' + rdtk_version_minor,
+    'RDTK_VERSION_REVISION=' + rdtk_version_revision,
+    'PACKAGE_RDTK_INCLUDE_DIR=${PACKAGE_PREFIX_DIR}/' + rdtk_include_dir,
+  ],
+}]

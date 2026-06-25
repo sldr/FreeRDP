@@ -200,3 +200,24 @@ pkgconfig.generate(
   requires : 'winpr@0@'.format(winpr_version_major),
   libraries_private : freerdp_pc_priv_libs,
 )
+
+# CMake find_package(FreeRDP) package
+cmake_packages += [{
+  'name' : 'FreeRDP',
+  'version' : freerdp_version,
+  'cmake_subdir' : 'FreeRDP@0@'.format(freerdp_version_major),
+  'template' : files('FreeRDPConfig.cmake.in'),
+  'targets' : 'freerdp,@0@,@1@,winpr'.format(
+    libdir / (shared_lib_prefix + freerdp_libname + shared_lib_suffix), freerdp_include_dir),
+  'vars' : [
+    'FREERDP_VERSION=' + freerdp_version,
+    'FREERDP_VERSION_MAJOR=' + freerdp_version_major,
+    'FREERDP_VERSION_MINOR=' + freerdp_version_minor,
+    'FREERDP_VERSION_REVISION=' + freerdp_version_revision,
+    'BUILD_SHARED_LIBS=' + (get_option('default_library') == 'static' ? 'OFF' : 'ON'),
+    'WITH_SMARTCARD_EMULATE=' + (with_smartcard_emulate ? 'ON' : 'OFF'),
+    'FREERDP_INSTALL_PREFIX=' + freerdp_install_prefix,
+    'FREERDP_PLUGIN_PATH=' + freerdp_plugin_path,
+    'PACKAGE_FREERDP_INCLUDE_DIR=${PACKAGE_PREFIX_DIR}/' + freerdp_include_dir,
+  ],
+}]

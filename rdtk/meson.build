@@ -46,6 +46,8 @@ rdtk_tmpl_version = files('templates' / 'version.h.in')
 rdtk_tmpl_buildconfig = files('templates' / 'build-config.h.in')
 rdtk_tmpl_buildflags = files('templates' / 'buildflags.h.in')
 rdtk_tmpl_config = files('templates' / 'config.h.in')
+# CMake package template (used by librdtk/, which can't reference templates/ via '..')
+rdtk_config_cmake_in = files('templates' / 'rdtkConfig.cmake.in')
 
 subdir('include')    # generates rdtk/{version,build-config,buildflags,config}.h
 subdir('librdtk')    # rdtk library

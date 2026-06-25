@@ -48,6 +48,8 @@ uwac_tmpl_version = files('templates' / 'version.h.in')
 uwac_tmpl_buildconfig = files('templates' / 'build-config.h.in')
 uwac_tmpl_buildflags = files('templates' / 'buildflags.h.in')
 uwac_tmpl_config = files('templates' / 'config.h.in')
+# CMake package template (used by libuwac/, which can't reference templates/ via '..')
+uwac_config_cmake_in = files('templates' / 'uwacConfig.cmake.in')
 
 subdir('libuwac')   # protocol codegen + uwac library
 subdir('include')   # generated config headers

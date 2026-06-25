@@ -3,3 +3,7 @@
 build
 checker
 abi-checker
+
+# Meson find_package() consumer smoke-test artifacts (local + CI validation)
+consumer-build
+stage

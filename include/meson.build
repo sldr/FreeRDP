@@ -13,7 +13,9 @@
 subdir('freerdp')
 
 # Install the checked-in public headers (*.h) into include/freerdp3/freerdp.
+# CMake installs the whole tree (FILES_MATCHING PATTERN "*.h"); settings.h
+# #includes settings_types_private.h, so it must ship despite the name.
 install_subdir('freerdp',
   install_dir : freerdp_include_dir,
-  exclude_files : ['meson.build', 'settings_types_private.h'],
+  exclude_files : ['meson.build'],
 )

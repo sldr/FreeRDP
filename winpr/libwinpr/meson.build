@@ -138,3 +138,26 @@ pkgconfig.generate(
   filebase : 'winpr@0@'.format(winpr_version_major),
   subdirs : 'winpr@0@'.format(winpr_version_major),
 )
+
+# CMake find_package(WinPR) package
+cmake_packages += [{
+  'name' : 'WinPR',
+  'version' : winpr_version,
+  'cmake_subdir' : 'WinPR@0@'.format(winpr_version_major),
+  'template' : winpr_config_cmake_in,
+  'targets' : 'winpr,@0@,@1@'.format(
+    libdir / (shared_lib_prefix + winpr_libname + shared_lib_suffix), winpr_include_dir),
+  'vars' : [
+    'BUILD_SHARED_LIBS=' + (get_option('default_library') == 'static' ? 'OFF' : 'ON'),
+    'WITH_JSON_DISABLED=OFF',
+    'JSONC_FOUND=' + (winpr_json_define == 'WITH_JSONC' ? 'ON' : ''),
+    'CJSON_FOUND=' + (winpr_json_define == 'WITH_CJSON' ? 'ON' : ''),
+    'WITH_CJSON_REQUIRED=OFF',
+    'WITH_URIPARSER=' + (uriparser_dep.found() ? 'ON' : 'OFF'),
+    'WINPR_VERSION_MAJOR=' + winpr_version_major,
+    'WINPR_VERSION_MINOR=' + winpr_version_minor,
+    'WINPR_VERSION_REVISION=' + winpr_version_revision,
+    'WITH_WINPR_JSON=' + (with_winpr_json ? 'ON' : 'OFF'),
+    'PACKAGE_WINPR_INCLUDE_DIR=${PACKAGE_PREFIX_DIR}/' + winpr_include_dir,
+  ],
+}]

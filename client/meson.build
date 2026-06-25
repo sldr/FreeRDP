@@ -1,5 +1,9 @@
 # FreeRDP clients (mirrors client/CMakeLists.txt)
 
+# CMake package template lives here at client/; common/ (where the descriptor is
+# assembled) can't reference it with files('../'), so expose the handle now.
+freerdp_client_config_cmake_in = files('FreeRDP-ClientConfig.cmake.in')
+
 if get_option('with_client_common')
   subdir('common')
 endif

@@ -69,6 +69,19 @@ jobs:
       - name: Compile
         run: meson compile -C build
 
+      # find_package() parity: install the tree, then build a downstream CMake
+      # project that consumes it via the Meson-generated *Config.cmake files.
+      - name: Install + CMake find_package() consumer test
+        if: matrix.preset == 'full' && matrix.cc == 'gcc'
+        run: |
+          DESTDIR="$PWD/stage" meson install -C build
+          PREFIX="$PWD/stage/usr/local"
+          echo "Installed CMake package files:"
+          find "$PREFIX/lib" -path '*/cmake/*' -name '*.cmake' | sort
+          cmake -S meson/tests/cmake-consumer -B consumer-build \
+            -DCMAKE_PREFIX_PATH="$PREFIX"
+          cmake --build consumer-build
+
       - name: Show configuration log on failure
         if: failure()
         run: cat build/meson-logs/meson-log.txt

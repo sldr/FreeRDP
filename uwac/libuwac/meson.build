@@ -72,3 +72,20 @@ pkgconfig.generate(
   filebase : 'uwac@0@'.format(uwac_api_version),
   subdirs : 'uwac@0@'.format(uwac_api_version),
 )
+
+# CMake find_package(uwac) package (template includes uwac.cmake, not uwacTargets.cmake)
+cmake_packages += [{
+  'name' : 'uwac',
+  'version' : uwac_version,
+  'cmake_subdir' : 'uwac@0@'.format(uwac_api_version),
+  'template' : uwac_config_cmake_in,
+  'targets_file' : 'uwac.cmake',
+  'targets' : 'uwac,@0@,@1@'.format(
+    libdir / (shared_lib_prefix + uwac_libname + shared_lib_suffix), uwac_include_dir),
+  'vars' : [
+    'UWAC_VERSION_MAJOR=' + uwac_version_major,
+    'UWAC_VERSION_MINOR=' + uwac_version_minor,
+    'UWAC_VERSION_REVISION=' + uwac_version_revision,
+    'PACKAGE_UWAC_INCLUDE_DIR=${PACKAGE_PREFIX_DIR}/' + uwac_include_dir,
+  ],
+}]
