@@ -102,6 +102,15 @@ add_project_arguments('-DFREERDP_EXPORTS', language : 'c')
 # MSVC compatibility with system headers (CMake: NONAMELESSUNION)
 add_project_arguments('-DNONAMELESSUNION', language : 'c')
 
+# MinGW-w64 gcc advertises C11 (__STDC_VERSION__ >= 201112L) but some toolchains
+# ship neither <threads.h> nor __STDC_NO_THREADS__ (a known mingw-w64 bug), so
+# winpr/platform.h tries to include a missing header. Define the standard
+# "no C11 threads" macro when the header is absent; platform.h then takes the
+# __thread fallback. (C++ TUs are unaffected — the guard keys off __STDC_VERSION__.)
+if not cc.has_header('threads.h')
+  add_project_arguments('-D__STDC_NO_THREADS__', language : 'c')
+endif
+
 global_args = []
 winpr_timezone_file = ''
 
