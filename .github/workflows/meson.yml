@@ -86,3 +86,46 @@ jobs:
       - name: Show configuration log on failure
         if: failure()
         run: cat build/meson-logs/meson-log.txt
+
+  # Windows MinGW (UCRT64) via MSYS2 — pacman provides gcc + meson + ninja +
+  # pkgconf + openssl + zlib, all integrated (no OpenSSL wrap needed). This is
+  # the first compile validation of the Windows code paths (winpr Win32 source
+  # selection, the wfreerdp GUI client, .rc resource compilation via windres).
+  windows-mingw:
+    name: mingw / ucrt64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-zlib
+
+      - name: Configure (core)
+        run: |
+          meson setup build \
+            -Dwith_x11=disabled -Dwith_wayland=disabled -Dwith_client_sdl=disabled \
+            -Dwith_ffmpeg=disabled -Dwith_swscale=false -Dwith_fuse=disabled \
+            -Dwith_krb5=disabled -Dwith_winpr_json=disabled \
+            -Dwith_alsa=disabled -Dwith_pulse=disabled -Dwith_oss=disabled \
+            -Dwith_manpages=false
+
+      - name: Compile
+        run: meson compile -C build
+
+      - name: Show configuration log on failure
+        if: failure()
+        run: cat build/meson-logs/meson-log.txt
