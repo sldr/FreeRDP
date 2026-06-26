@@ -123,8 +123,10 @@ jobs:
             -Dwith_alsa=disabled -Dwith_pulse=disabled -Dwith_oss=disabled \
             -Dwith_manpages=false
 
+      # -k0: keep building after failures so one run surfaces every error
+      # (still under active Windows bring-up; drop once MinGW is green).
       - name: Compile
-        run: meson compile -C build
+        run: meson compile -C build --ninja-args=-k0
 
       - name: Show configuration log on failure
         if: failure()

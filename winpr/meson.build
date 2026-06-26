@@ -108,7 +108,10 @@ endif
 
 # Booleans reused by the utils module for conditional sources
 winpr_have_syslog = cc.has_header('syslog.h')
-winpr_have_unwind = cc.has_header('unwind.h')
+# The unwind backtrace backend (unwind/debug.c) is Unix-only — it includes
+# <dlfcn.h>. MinGW gcc ships <unwind.h> even though Windows has no dlfcn.h, so
+# gate it off there (Windows uses the windows/debug.c dbghelp backend instead).
+winpr_have_unwind = not is_windows and cc.has_header('unwind.h')
 
 # eventfd_read/write
 if cc.has_header('sys/eventfd.h')
