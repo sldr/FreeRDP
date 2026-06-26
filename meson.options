@@ -44,6 +44,16 @@ option('with_client', type : 'boolean', value : true,
        description : 'Build client binaries (CMake: WITH_CLIENT)')
 option('with_client_sdl', type : 'feature', value : 'auto',
        description : '[experimental] Build SDL client (CMake: WITH_CLIENT_SDL)')
+option('with_client_sdl3', type : 'feature', value : 'auto',
+       description : 'Build SDL3 client (CMake: WITH_CLIENT_SDL3)')
+option('with_client_sdl2', type : 'feature', value : 'auto',
+       description : '[deprecated,experimental] Build SDL2 client (CMake: WITH_CLIENT_SDL2)')
+option('with_client_sdl_versioned', type : 'boolean', value : false,
+       description : 'Append SDL version to client binaries (CMake: WITH_CLIENT_SDL_VERSIONED)')
+option('with_sdl_image_dialogs', type : 'boolean', value : false,
+       description : 'Build SDL dialogs with SDL_image support (CMake: WITH_SDL_IMAGE_DIALOGS)')
+option('with_webview', type : 'boolean', value : false,
+       description : 'Build SDL client with WebView AAD login popup (CMake: WITH_WEBVIEW)')
 option('with_client_interface', type : 'boolean', value : false,
        description : 'Build clients as a library with an interface (CMake: WITH_CLIENT_INTERFACE)')
 option('client_interface_shared', type : 'boolean', value : false,

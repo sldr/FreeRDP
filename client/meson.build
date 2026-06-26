@@ -18,8 +18,12 @@ endif
 if get_option('with_client') and with_uwac
   subdir('Wayland')
 endif
+# SDL2/SDL3 client (C++); detection + per-version gating happens in SDL/meson.build.
+if get_option('with_client') and get_option('with_client_sdl').allowed()
+  subdir('SDL')
+endif
 # Further frontends:
-#   SDL2/SDL3 (WITH_CLIENT_SDL), Mac (APPLE && !IOS)
+#   Mac (APPLE && !IOS)
 
 if get_option('with_client') and get_option('with_sample')
   subdir('Sample')

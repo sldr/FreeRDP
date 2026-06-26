@@ -409,7 +409,17 @@ tmpl_settings_keys_h = files('include' / 'config' / 'settings_keys.h.in')
 settings_types_private_h = files('include' / 'freerdp' / 'settings_types_private.h')
 gen_channel_tables_py = files('meson' / 'gen_channel_tables.py')
 gen_cmake_package_py = files('meson' / 'gen_cmake_package.py')
+gen_sdl_resource_py = files('meson' / 'gen_sdl_resource.py')
 tmpl_channel_tables = files('channels' / 'client' / 'tables.c.in')
+
+# SDL client compiled-in resource assets. The handles are created here because
+# they live at the repo root, and the SDL meson.build files (under client/SDL)
+# cannot reference them with files('..') (Meson forbids escaping the subdir).
+sdl_font_file = files('resources' / 'font' / 'OpenSans-VariableFont_wdth,wght.ttf')
+sdl_svg_files = files(
+  'resources' / 'FreeRDP_Icon.svg', 'resources' / 'icon_info.svg',
+  'resources' / 'icon_warning.svg', 'resources' / 'icon_error.svg',
+)
 tmpl_oss_includes = files('cmake' / 'oss-includes.h.in')
 
 ############################################################
