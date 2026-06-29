@@ -52,7 +52,10 @@ freerdp_shadow_subsystem_lib = library(
   files('shadow_subsystem_builtin.c'),
   include_directories : shadow_inc,
   link_with : freerdp_shadow_subsystem_impl,
-  dependencies : [freerdp_shadow_dep, freerdp_dep, winpr_dep],
+  # The Win subsystem impl calls freerdp_server_warn_unmaintained (in
+  # freerdp-server); Windows DLL linking needs it explicit (ELF resolved it
+  # transitively through freerdp-shadow's DT_NEEDED).
+  dependencies : [freerdp_shadow_dep, freerdp_server_dep, freerdp_dep, winpr_dep],
   gnu_symbol_visibility : default_symbol_visibility,
   install : true,
   kwargs : shadow_lib_kwargs,
