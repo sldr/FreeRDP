@@ -345,6 +345,13 @@ else
   candidate_args = [
     '-fno-omit-frame-pointer',
     '-Wredundant-decls',
+    # gcc >= 14 promotes these to errors by default; the CMake build does not
+    # enable -Werror, so keep them as warnings. They fire only on Windows code
+    # paths (e.g. DWORD*/UINT32* and Winsock getsockopt/Interlocked signatures,
+    # same width at runtime) that the Linux build never compiles.
+    '-Wno-error=incompatible-pointer-types',
+    '-Wno-error=int-conversion',
+    '-Wno-error=implicit-function-declaration',
   ]
   common_c_args += cc.get_supported_arguments(candidate_args)
 endif

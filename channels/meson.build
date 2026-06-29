@@ -89,6 +89,8 @@ channel_registry = [
   {
     'name' : 'parallel', 'type' : 'static',
     'client' : {'srcs' : ['parallel/client/parallel_main.c'], 'entry' : 'DeviceServiceEntry'},
+    # CMake: serial/parallel redirection unsupported on Windows/macOS (POSIX device I/O).
+    'client_enabled' : not (is_windows or is_darwin),
   },
   {
     'name' : 'rail', 'type' : 'static',
@@ -147,6 +149,8 @@ channel_registry = [
   {
     'name' : 'serial', 'type' : 'static',
     'client' : {'srcs' : ['serial/client/serial_main.c'], 'entry' : 'DeviceServiceEntry'},
+    # CMake: serial redirection unsupported on Windows/macOS.
+    'client_enabled' : not (is_windows or is_darwin),
   },
   {
     'name' : 'smartcard', 'type' : 'static',
@@ -155,6 +159,8 @@ channel_registry = [
   {
     'name' : 'sshagent', 'type' : 'dynamic',
     'client' : {'srcs' : ['sshagent/client/sshagent_main.c'], 'entry' : 'DVCPluginEntry'},
+    # SSH agent forwarding uses AF_UNIX sockets (sys/socket.h) — POSIX only.
+    'client_enabled' : not is_windows,
   },
   {
     'name' : 'telemetry', 'type' : 'dynamic',
@@ -361,7 +367,7 @@ foreach ch : channel_registry
   client_inc = [freerdp_public_inc, winpr_inc, channel_inc] + common_inc
   channel_built = false
 
-  if with_client_channels and ch.has_key('client')
+  if with_client_channels and ch.has_key('client') and ch.get('client_enabled', true)
     cl = ch['client']
     entries = cl.has_key('entries') ? cl['entries'] : [cl['entry']]
     libname = '@0@-client'.format(cname)
