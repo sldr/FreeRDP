@@ -123,11 +123,52 @@ jobs:
             -Dwith_alsa=disabled -Dwith_pulse=disabled -Dwith_oss=disabled \
             -Dwith_manpages=false
 
-      # -k0: keep building after failures so one run surfaces every error
-      # (still under active Windows bring-up; drop once MinGW is green).
       - name: Compile
-        run: meson compile -C build --ninja-args=-k0
+        run: meson compile -C build
 
       - name: Show configuration log on failure
         if: failure()
         run: cat build/meson-logs/meson-log.txt
+
+  # Windows MSVC (x64) — the primary Windows toolchain. Dependencies come from
+  # vcpkg (preinstalled on the runner, with binary caching); Meson activates the
+  # Visual Studio environment via --vsenv and discovers OpenSSL/zlib through the
+  # vcpkg pkg-config + CMake config trees.
+  windows-msvc:
+    name: msvc / x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Meson + Ninja
+        run: pip install meson ninja
+
+      - name: Install pkg-config
+        run: choco install --no-progress pkgconfiglite
+
+      - name: Install dependencies (vcpkg)
+        shell: cmd
+        run: vcpkg install openssl:x64-windows zlib:x64-windows
+
+      # -k0 while MSVC is under active bring-up; drop once green.
+      - name: Configure + compile (core)
+        shell: pwsh
+        run: |
+          $vcpkg = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
+          meson setup build --vsenv `
+            "-Dpkg_config_path=$vcpkg\lib\pkgconfig" `
+            "-Dcmake_prefix_path=$vcpkg" `
+            -Dwith_x11=disabled -Dwith_wayland=disabled -Dwith_client_sdl=disabled `
+            -Dwith_ffmpeg=disabled -Dwith_swscale=false -Dwith_fuse=disabled `
+            -Dwith_krb5=disabled -Dwith_winpr_json=disabled `
+            -Dwith_alsa=disabled -Dwith_pulse=disabled -Dwith_oss=disabled `
+            -Dwith_manpages=false
+          meson compile -C build --ninja-args=-k0
+
+      - name: Show configuration log on failure
+        if: failure()
+        run: Get-Content build/meson-logs/meson-log.txt
